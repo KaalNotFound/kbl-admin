@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "imports": {
     "#domain": "./shared_kernel/domain/index.js",
     "#shared/*": "./shared_kernel/*",
@@ -19,7 +22,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "npm run build && cross-env NODE_ENV=production node server/index.js",
-    "test": "npm run test:unit & npm run test:contract",
+    "test": "npm run test:unit && npm run test:contract",
     "test:unit": "vitest run",
     "test:contract": "node --test server/test-contract.mjs server/test-acceptance.mjs server/test-fase6.mjs server/lib/test-active-recall-store.mjs server/infrastructure/test-observabilidad.mjs",
     "test:watch": "vitest"
