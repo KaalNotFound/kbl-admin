@@ -219,3 +219,34 @@ describe('POST /api/capture', () => {
     expect(res.body).toHaveProperty('error')
   })
 })
+
+describe('GET /api/study/data (restored study endpoints)', () => {
+  it('returns the study data shape with empty collections when the vault study dir is absent', async () => {
+    const res = await request(app).get('/api/study/data')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual(
+      expect.objectContaining({
+        notes: expect.any(Array),
+        concepts: expect.any(Array),
+        questions: expect.any(Array),
+        doubts: expect.any(Array),
+      })
+    )
+  })
+})
+
+describe('GET /api/study/history (restored study endpoints)', () => {
+  it('returns an array of history items', async () => {
+    const res = await request(app).get('/api/study/history')
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body)).toBe(true)
+  })
+})
+
+describe('POST /api/study/self-score (restored study endpoints)', () => {
+  it('returns 400 when questionOrDoubt is missing', async () => {
+    const res = await request(app).post('/api/study/self-score').send({})
+    expect(res.status).toBe(400)
+    expect(res.body).toHaveProperty('error')
+  })
+})

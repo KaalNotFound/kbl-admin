@@ -20,6 +20,12 @@ import { createCaptureNote } from './application/use-cases/capture-note.js';
 import { createSubmitActiveRecallReview } from './application/use-cases/submit-active-recall-review.js';
 import { createFinanzasUseCases } from './application/use-cases/finanzas.js';
 import { createMasteryUseCases } from './application/use-cases/mastery.js';
+// Torre study-data (2026-10-19): el servicio legacy de datos de estudio se
+// re-monta como use-case con deps inyectadas — el router study.mjs consume
+// req.useCases.studyData y NO importa lib/ (boundary §2.1). Resuelve la
+// regresión: el frontend llama GET /api/study/data y el endpoint no existía.
+import { createStudyDataUseCases } from './application/use-cases/study-data.js';
+import * as studyService from './lib/study-service.mjs';
 import { createQueueUseCases } from './application/use-cases/vault-queue.js';
 import { createEntityTypesUseCases } from './application/use-cases/vault-entity-types.js';
 import { createInventoryUseCases } from './application/use-cases/vault-inventory.js';
@@ -128,6 +134,10 @@ function createContainer(opts = {}) {
       vault: { studyPath: vaultFs.STUDY_PATH, collectStudyFiles: vaultFs.collectStudyFiles, readFile: vaultFs.readFile },
       nlm,
     }),
+    // Torre study-data (2026-10-19): funciones del servicio de estudio
+    // inyectadas como port — el router study.mjs expone GET /study/data,
+    // GET /study/history y los POST de guardado vía req.useCases.studyData.
+    studyData: createStudyDataUseCases(studyService),
     // Torre vault-helpers (ADR-025): use-case con deps del adapter de fs
     // (vault-fs-adapter.mjs vía barrel lib/). El router queue.mjs consume
     // req.useCases.queue — ya no importa lib/ directo.

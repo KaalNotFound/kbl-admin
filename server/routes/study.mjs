@@ -90,4 +90,79 @@ router.post('/study/record-quiz', async (req, res) => {
   }
 })
 
+// --- Study data endpoints (restored 2026-10-19) ---
+// The frontend StudyDashboard consumes these (src/api/study.ts); they were
+// orphaned by the DI refactor and answered 404. They delegate to
+// req.useCases.studyData — no lib/ imports in the router (boundary §2.1).
+
+/**
+ * GET /study/data — parsed study notes, concepts, questions, doubts.
+ */
+router.get('/study/data', async (req, res) => {
+  try {
+    res.json(req.useCases.studyData.getData())
+  } catch (error) {
+    req.log?.error('study_data_error', { error: error.message })
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * GET /study/history — answer history from the active-recall dirs.
+ */
+router.get('/study/history', async (req, res) => {
+  try {
+    res.json(req.useCases.studyData.getHistory())
+  } catch (error) {
+    req.log?.error('study_history_error', { error: error.message })
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * POST /study/answer — persist an answer to a study question as a markdown
+ * file in the active-recall directory.
+ */
+router.post('/study/answer', async (req, res) => {
+  try {
+    const { question, answer, sourceNote, answerType } = req.body || {}
+    if (!question) return res.status(400).json({ error: 'question is required' })
+    const result = req.useCases.studyData.saveAnswer({ question, answer, sourceNote, answerType })
+    res.status(201).json({ success: true, ...result })
+  } catch (error) {
+    req.log?.error('study_answer_error', { error: error.message })
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * POST /study/self-score — persist a self-evaluation (correct/partial/incorrect).
+ */
+router.post('/study/self-score', async (req, res) => {
+  try {
+    const { questionOrDoubt, type, score, linkedConcept } = req.body || {}
+    if (!questionOrDoubt) return res.status(400).json({ error: 'questionOrDoubt is required' })
+    const result = req.useCases.studyData.saveSelfScore({ questionOrDoubt, type, score, linkedConcept })
+    res.status(201).json({ success: true, ...result })
+  } catch (error) {
+    req.log?.error('study_self_score_error', { error: error.message })
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * POST /study/feedback-request — queue a feedback session for offline processing.
+ */
+router.post('/study/feedback-request', async (req, res) => {
+  try {
+    const session = req.body || {}
+    if (!session.sessionId) return res.status(400).json({ error: 'sessionId is required' })
+    const result = req.useCases.studyData.saveFeedbackRequest(session)
+    res.status(201).json({ success: true, ...result })
+  } catch (error) {
+    req.log?.error('study_feedback_request_error', { error: error.message })
+    res.status(500).json({ error: error.message })
+  }
+})
+
 export default router

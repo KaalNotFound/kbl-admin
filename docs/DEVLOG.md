@@ -3,6 +3,30 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-19 — Restore study data endpoints (orphaned by the DI refactor)
+
+**Impact:** the Study dashboard's Notas/Conceptos/Preguntas/Dudas tabs called
+`GET /api/study/data` and friends, which answered 404 — the read/write
+service (`server/lib/study-service.mjs`) existed but no route mounted it
+since the mastery/study DI refactor.
+
+**Fix:**
+
+- New thin use-case `server/application/use-cases/study-data.js` (pure
+  factory, functions injected; the DI container wires it from
+  `lib/study-service.mjs`).
+- `server/routes/study.mjs` mounts `GET /study/data`, `GET /study/history`
+  and the three `POST /study/{answer,self-score,feedback-request}` save
+  endpoints, delegating to `req.useCases.studyData` — no `lib/` imports in
+  the router (boundary §2.1).
+- Vitest route tests added (`server/__tests__/api.test.js`): data shape,
+  history array, 400 validation.
+
+**Verification:** 61/61 Vitest unit green; live smoke against the bundled
+demo vault returned 2 parsed notes, 3 concepts, 4 questions, 2 doubts
+(the demo study notes carry `entity_type::` so `detectNoteFormat`
+classifies them as inline-fields).
+
 ## 2026-10-19 — Demo mode: configurable vault root + first-boot seeds + bundled demo vault
 
 **Impact:** a fresh clone now renders populated dashboards with zero

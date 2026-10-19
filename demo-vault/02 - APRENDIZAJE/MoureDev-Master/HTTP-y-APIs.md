@@ -1,6 +1,7 @@
 # HTTP y APIs REST
 
-> Demo study note for KBL Admin's bundled demo vault.
+entity_type:: estudio
+>Demo study note for KBL Admin's bundled demo vault.
 
 conceptos:: HTTP verbs — cada método expresa una intención sobre un recurso: leer, crear, reemplazar o borrar.
 definicion:: Idempotencia — propiedad de un método cuyo efecto de repetir la llamada es el mismo que ejecutarla una vez.
