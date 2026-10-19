@@ -3,6 +3,36 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-19 — Food Sora dashboard survived an empty vault (Finanzas demo complete)
+
+**Symptom:** entering Finanzas → Food Sora killed the entire page with
+`Reduce of empty array with no initial value`. A fresh clone had no Daily
+notes with `*_food_sora::` fields, so `stats.by_slot` arrived empty and
+`useMemo` ran `stats.by_slot.reduce((a, b) => ...)` with no initial
+value — an uncaught render crash that unmounted the whole React tree.
+
+**Frontend fix (`src/components/FoodSoraDashboard.tsx`):**
+
+- `bestSlot` guards `stats?.by_slot?.length` (reduce needs an initial
+  value or a non-empty array).
+- `by_slot?.map`, `by_slot?.filter` and `calendar?.slice` hardened
+  against partial/degraded envelopes.
+
+**Demo seeds (`demo-vault/05 - JOURNAL/Daily/`):** the section represents
+the feeding log of a cat, so an empty calendar made the demo feel broken.
+Added 11 daily notes (2026-10-08 → 2026-10-18) with realistic slot
+records (`manana_food_sora:: 08:15`, etc.). The dashboard now shows
+11 days, streak 11, 38/55 meals, 69% rate and per-slot averages.
+
+**Contract tests (`server/__tests__/food-sora-routes.test.js`):** pin
+`/api/food-sora` + `/api/food-sora/stats` envelopes (every documented
+key present) and assert the bundled demo-vault yields populated stats.
+Suite: 88/88.
+
+**Verification:** live click-drive in two modes — seeded vault (hero +
+calendar + per-slot + detail all render, zero page errors) and an empty
+vault (`0 días registrados` honest state, zero page errors).
+
 ## 2026-10-19 — Global search palette wired (Buscar... Ctrl+K is now real)
 
 **Impact:** the TopBar global search wrote to `useAppStore.search`, which
