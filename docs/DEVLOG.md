@@ -3,6 +3,50 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-19 — Demo mode: configurable vault root + first-boot seeds + bundled demo vault
+
+**Impact:** a fresh clone now renders populated dashboards with zero
+configuration (`npm install` → `npm run dev`), instead of empty vault panels
+and empty stores. The Obsidian vault integration stopped depending on a
+hardcoded folder layout.
+
+**Design:**
+
+- **`KBL_VAULT_ROOT` env override** (`server/infrastructure/vault-fs-adapter.mjs`):
+  when set, vault-dependent dashboards read a real Obsidian vault; when unset,
+  they read the bundled `demo-vault/` inside the repo. Previously the root was
+  resolved by walking fixed levels up into a Johnny-Decimal layout that no
+  longer matched, so every scan warned `ENOENT`.
+- **First-boot store seeds** (`server/seed/mastery-seed.json`,
+  `server/seed/active-recall-seed.json`): `ensureStore()` on both JSON stores
+  loads the bundled seed when the store file does not exist, then the store
+  is normal user-owned data (`server/data/` stays gitignored). Seed keys use
+  the same hash functions as `hashConcept` / `hashQuestion` so the Skill Tree
+  and Active Recall lookups resolve correctly. Synthetic content only — no
+  personal learning data ships in the repo.
+- **Bundled `demo-vault/`**: minimal Obsidian-like tree (inbox, projects, areas,
+  study notes, journal, queue, system state) with content in the exact formats
+  each use-case parses (`_PENDING.md` sections with `**Estado:** / **Prioridad:**`,
+  `_PENDIENTES.md`, `_ROADMAP.md` with `## Current` + checkboxes,
+  `07 - SCRIPTS/ENTITY_CATALOG.json`, `08 - SYSTEM/state/session-log.json`,
+  study notes with `conceptos::` / `definicion::` / `pregunta::` / `duda::`
+  inline fields, two of them with the em-dash `Concepto — analogía` syntax the
+  concept parser expects).
+
+**Config surface** (documented in `.env.example`): `KBL_VAULT_ROOT`,
+`KBL_DATA_DIR`, `MASTERY_STORE_PATH`, `ACTIVE_RECALL_STORE_PATH`,
+`MASTERY_SEED_PATH`, `ACTIVE_RECALL_SEED_PATH`.
+
+**Verification:**
+
+- Full suite green after the change (58/58 Vitest unit, 21 contract, 26 fase6,
+  14 active-recall, acceptance, observabilidad).
+- Local smoke: `/api/overview` (10 demo notes, health info), `/api/projects`
+  (2 demo projects), `/api/todos` (3 demo tasks with states), `/api/context`
+  (2 pendientes + roadmap current/pending/completed).
+- Fresh-clone smoke (`git clone` into `/tmp`, `npm install`, boot): stores boot
+  from seeds, demo vault feeds the scanner.
+
 ## 2026-10-19 — Fixed boot crash: JSON stores wrote to a non-existent vault directory
 
 **Impact:** the backend failed to start on any machine whose surrounding

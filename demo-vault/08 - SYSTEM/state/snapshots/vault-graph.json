@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    { "id": "demo-vault-root", "type": "root", "label": "demo-vault" },
+    { "id": "demo-proyectos", "type": "area", "label": "01 - PROYECTOS", "notes": 4 },
+    { "id": "demo-areas", "type": "area", "label": "02 - AREAS", "notes": 1 }
+  ],
+  "edges": [
+    { "from": "demo-vault-root", "to": "demo-proyectos" },
+    { "from": "demo-vault-root", "to": "demo-areas" }
+  ]
+}

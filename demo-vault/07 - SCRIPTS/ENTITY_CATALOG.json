@@ -1,0 +1,14 @@
+{
+  "demo-notebook-proxy": {
+    "name": "demo-notebook-proxy",
+    "type": "proyecto",
+    "fields": ["entity_type", "status"],
+    "notes": 1
+  },
+  "demo-prep-proyecto-final": {
+    "name": "demo-prep-proyecto-final",
+    "type": "proyecto",
+    "fields": ["entity_type", "status"],
+    "notes": 2
+  }
+}

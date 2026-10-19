@@ -1,0 +1,18 @@
+{
+  "sessions": [
+    {
+      "date": "2026-10-19T10:05:00Z",
+      "module": "Algoritmos",
+      "durationMin": 25,
+      "conceptsTouched": 3,
+      "notes": "Demo session: bubble sort practice + recursive review."
+    },
+    {
+      "date": "2026-10-19T16:40:00Z",
+      "module": "Fundamentos Web",
+      "durationMin": 50,
+      "conceptsTouched": 4,
+      "notes": "Demo session: HTTP methods and idempotency recall."
+    }
+  ]
+}
