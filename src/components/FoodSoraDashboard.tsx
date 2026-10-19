@@ -28,8 +28,10 @@ export default function FoodSoraDashboard() {
   const today = useMemo(() => detail?.[detail.length - 1] || null, [detail])
 
   const bestSlot = useMemo(() => {
-    if (!stats) return null
-    return stats.by_slot.reduce((a, b) => a.count > b.count ? a : b)
+    // by_slot can be empty on a fresh vault (no Daily food records yet) —
+    // reduce without an initial value crashed the whole dashboard section.
+    if (!stats?.by_slot?.length) return null
+    return stats.by_slot.reduce((a, b) => (a.count > b.count ? a : b))
   }, [stats])
 
   if (loading) return (
@@ -92,7 +94,7 @@ export default function FoodSoraDashboard() {
         </div>
         <div className="bg-card p-4 rounded-[16px] text-center hover:border-[rgba(143,202,160,0.2)] hover:-translate-y-0.5 transition-all">
           <div className="text-[1.3rem] mb-[0.35rem]">🎯</div>
-          <div className="text-[1.8rem] font-bold leading-tight text-[#a855f7]">{stats.by_slot.filter(s => s.pct >= 50).length}/5</div>
+          <div className="text-[1.8rem] font-bold leading-tight text-[#a855f7]">{stats.by_slot?.filter(s => s.pct >= 50).length || 0}/5</div>
           <div className="text-[0.6rem] text-[#a0907e] uppercase tracking-wider mt-1">franjas +50%</div>
         </div>
       </div>
@@ -103,7 +105,7 @@ export default function FoodSoraDashboard() {
           <h3 className="text-[0.8rem] font-semibold text-[#c8b8a8] uppercase tracking-wider">Rendimiento por momento del día</h3>
         </div>
         <div className="grid grid-cols-5 gap-3 max-lg:grid-cols-3 max-md:grid-cols-2">
-          {stats.by_slot.map(slot => (
+          {stats.by_slot?.map(slot => (
             <div key={slot.name} className="text-center">
               <div className="text-[0.6rem] text-[#a0907e] uppercase tracking-wider mb-[0.3rem]">{slot.name}</div>
               <div className="text-[1.4rem] font-bold text-kbl-green mb-[0.4rem]">{slot.count}x</div>
@@ -134,7 +136,7 @@ export default function FoodSoraDashboard() {
           <span className="text-[0.6rem] text-[#a0907e] text-center">🍽️</span>
         </div>
         <div className="max-h-[420px] overflow-y-auto">
-          {stats.calendar.slice().reverse().map(day => (
+          {stats.calendar?.slice().reverse().map(day => (
             <div key={day.fecha} className="grid grid-cols-[36px_repeat(5,1fr)_40px] gap-[3px] mb-[3px] items-center max-md:grid-cols-[28px_repeat(5,1fr)_34px]">
               <span className="text-[0.6rem] text-[#a0907e] text-right pr-[3px] [font-variant-numeric:tabular-nums]">{day.fecha.slice(5)}</span>
               {SLOT_NAMES.map(s => (
