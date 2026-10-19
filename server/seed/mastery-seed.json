@@ -1,0 +1,231 @@
+{
+  "concepts": {
+    "9d3d84c5aef4": {
+      "concept": "Bubble Sort",
+      "module": "Algoritmos",
+      "totalScores": 3,
+      "correctCount": 3,
+      "lastValidated": "2026-10-03T13:46:04.429Z",
+      "level": 4,
+      "feynmanValidated": true,
+      "currentScore": 90,
+      "rawLevel": 4
+    },
+    "090ae27620f1": {
+      "concept": "Binary Search",
+      "module": "Algoritmos",
+      "totalScores": 2,
+      "correctCount": 2,
+      "lastValidated": "2026-10-05T13:46:04.429Z",
+      "level": 3,
+      "feynmanValidated": true,
+      "currentScore": 75,
+      "rawLevel": 3
+    },
+    "a47f09d9af3e": {
+      "concept": "Big O Notation",
+      "module": "Algoritmos",
+      "totalScores": 3,
+      "correctCount": 0,
+      "lastValidated": "2026-10-07T13:46:04.430Z",
+      "level": 2,
+      "feynmanValidated": false,
+      "currentScore": 65,
+      "rawLevel": 2
+    },
+    "09a0845b88ae": {
+      "concept": "Recursion",
+      "module": "Algoritmos",
+      "totalScores": 2,
+      "correctCount": 0,
+      "lastValidated": "2026-10-09T13:46:04.430Z",
+      "level": 1,
+      "feynmanValidated": false,
+      "currentScore": 35,
+      "rawLevel": 1
+    },
+    "b9f472d0ceaa": {
+      "concept": "JavaScript Destructuring",
+      "module": "JavaScript",
+      "totalScores": 3,
+      "correctCount": 3,
+      "lastValidated": "2026-10-11T13:46:04.430Z",
+      "level": 4,
+      "feynmanValidated": true,
+      "currentScore": 95,
+      "rawLevel": 4
+    },
+    "14d24ca31a3d": {
+      "concept": "React Hooks Basics",
+      "module": "Frontend",
+      "totalScores": 1,
+      "correctCount": 0,
+      "lastValidated": "2026-10-13T13:46:04.430Z",
+      "level": 2,
+      "feynmanValidated": false,
+      "currentScore": 40,
+      "rawLevel": 2
+    },
+    "7fcd5d59c270": {
+      "concept": "HTTP Methods",
+      "module": "Fundamentos Web",
+      "totalScores": 2,
+      "correctCount": 0,
+      "lastValidated": "2026-10-15T13:46:04.430Z",
+      "level": 2,
+      "feynmanValidated": false,
+      "currentScore": 68,
+      "rawLevel": 2
+    },
+    "9bfd4446bbd4": {
+      "concept": "REST vs GraphQL",
+      "module": "Fundamentos Web",
+      "totalScores": 1,
+      "correctCount": 0,
+      "lastValidated": "2026-10-17T13:46:04.430Z",
+      "level": 1,
+      "feynmanValidated": false,
+      "currentScore": 20,
+      "rawLevel": 1
+    }
+  },
+  "scores": {
+    "9d3d84c5aef4": [
+      {
+        "score": 80,
+        "scoreType": "feynman",
+        "sourceNote": null,
+        "timestamp": "2026-10-03T13:46:04.429Z",
+        "details": "{\"explanation\":\"Demo seed entry: Bubble Sort\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      },
+      {
+        "score": 85,
+        "scoreType": "feynman",
+        "sourceNote": null,
+        "timestamp": "2026-10-04T13:46:04.429Z",
+        "details": "{\"explanation\":\"Demo seed entry: Bubble Sort\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      },
+      {
+        "score": 90,
+        "scoreType": "feynman",
+        "sourceNote": null,
+        "timestamp": "2026-10-05T13:46:04.429Z",
+        "details": "{\"explanation\":\"Demo seed entry: Bubble Sort\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      }
+    ],
+    "090ae27620f1": [
+      {
+        "score": 70,
+        "scoreType": "feynman",
+        "sourceNote": null,
+        "timestamp": "2026-10-05T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: Binary Search\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      },
+      {
+        "score": 75,
+        "scoreType": "feynman",
+        "sourceNote": null,
+        "timestamp": "2026-10-06T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: Binary Search\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      }
+    ],
+    "a47f09d9af3e": [
+      {
+        "score": 55,
+        "scoreType": "socratic",
+        "sourceNote": null,
+        "timestamp": "2026-10-07T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: Big O Notation\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      },
+      {
+        "score": 60,
+        "scoreType": "socratic",
+        "sourceNote": null,
+        "timestamp": "2026-10-08T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: Big O Notation\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      },
+      {
+        "score": 65,
+        "scoreType": "socratic",
+        "sourceNote": null,
+        "timestamp": "2026-10-09T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: Big O Notation\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      }
+    ],
+    "09a0845b88ae": [
+      {
+        "score": 30,
+        "scoreType": "socratic",
+        "sourceNote": null,
+        "timestamp": "2026-10-09T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: Recursion\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      },
+      {
+        "score": 35,
+        "scoreType": "socratic",
+        "sourceNote": null,
+        "timestamp": "2026-10-10T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: Recursion\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      }
+    ],
+    "b9f472d0ceaa": [
+      {
+        "score": 90,
+        "scoreType": "feynman",
+        "sourceNote": null,
+        "timestamp": "2026-10-11T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: JavaScript Destructuring\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      },
+      {
+        "score": 85,
+        "scoreType": "feynman",
+        "sourceNote": null,
+        "timestamp": "2026-10-12T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: JavaScript Destructuring\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      },
+      {
+        "score": 95,
+        "scoreType": "feynman",
+        "sourceNote": null,
+        "timestamp": "2026-10-13T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: JavaScript Destructuring\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      }
+    ],
+    "14d24ca31a3d": [
+      {
+        "score": 40,
+        "scoreType": "socratic",
+        "sourceNote": null,
+        "timestamp": "2026-10-13T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: React Hooks Basics\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      }
+    ],
+    "7fcd5d59c270": [
+      {
+        "score": 60,
+        "scoreType": "socratic",
+        "sourceNote": null,
+        "timestamp": "2026-10-15T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: HTTP Methods\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      },
+      {
+        "score": 68,
+        "scoreType": "socratic",
+        "sourceNote": null,
+        "timestamp": "2026-10-16T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: HTTP Methods\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      }
+    ],
+    "9bfd4446bbd4": [
+      {
+        "score": 20,
+        "scoreType": "socratic",
+        "sourceNote": null,
+        "timestamp": "2026-10-17T13:46:04.430Z",
+        "details": "{\"explanation\":\"Demo seed entry: REST vs GraphQL\",\"feedback\":\"Seed data generated for the demo experience.\"}"
+      }
+    ]
+  },
+  "version": 1,
+  "lastUpdated": "2026-10-19T13:46:04.430Z"
+}

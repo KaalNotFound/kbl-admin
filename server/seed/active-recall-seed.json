@@ -1,0 +1,237 @@
+{
+  "questions": {
+    "a25bf26484d6": {
+      "question": "¿Qué complejidad tiene Bubble Sort en el peor caso y por qué?",
+      "type": "question",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-19T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-19T13:46:04.430Z",
+          "answer": null,
+          "score": "correct",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 8,
+      "nextReview": "2026-10-27T13:46:04.430Z",
+      "due": false
+    },
+    "9d1c0d563e86": {
+      "question": "¿Cómo decido entre búsqueda lineal y búsqueda binaria guardando un array?",
+      "type": "question",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-20T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-20T13:46:04.430Z",
+          "answer": null,
+          "score": "correct",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        },
+        {
+          "date": "2026-09-22T13:46:04.430Z",
+          "answer": null,
+          "score": "partial",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 4,
+      "nextReview": "2026-10-23T13:46:04.430Z",
+      "due": false
+    },
+    "e956e698dea8": {
+      "question": "¿Qué significa que Big O describa el peor caso y no el promedio?",
+      "type": "question",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-21T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-21T13:46:04.430Z",
+          "answer": null,
+          "score": "partial",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 2,
+      "nextReview": "2026-10-21T13:46:04.430Z",
+      "due": false
+    },
+    "230db8b2fc81": {
+      "question": "¿Cómo convierto un problema recursivo en iterativo sin perder legibilidad?",
+      "type": "doubt",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-22T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-22T13:46:04.430Z",
+          "answer": null,
+          "score": "incorrect",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 0,
+      "nextReview": null,
+      "due": true
+    },
+    "a5d92780d49d": {
+      "question": "¿En qué se diferencia useState de useRef en React?",
+      "type": "question",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-23T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-23T13:46:04.430Z",
+          "answer": null,
+          "score": "correct",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 8,
+      "nextReview": "2026-10-27T13:46:04.430Z",
+      "due": false
+    },
+    "9955f402b0ed": {
+      "question": "¿Por qué destruyo arrays y objetos con destructuring antes que acceder índice por índice?",
+      "type": "meta",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-24T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-24T13:46:04.430Z",
+          "answer": null,
+          "score": "correct",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        },
+        {
+          "date": "2026-09-26T13:46:04.430Z",
+          "answer": null,
+          "score": "correct",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 12,
+      "nextReview": "2026-10-31T13:46:04.430Z",
+      "due": false
+    },
+    "16817955a849": {
+      "question": "¿Qué diferencia guarda REST de GraphQL al modelar una API de solo lectura?",
+      "type": "question",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-25T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-25T13:46:04.430Z",
+          "answer": null,
+          "score": "incorrect",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 0,
+      "nextReview": null,
+      "due": true
+    },
+    "760b72b88fae": {
+      "question": "¿Cómo funciona el early-exit del Bubble Sort optimizado?",
+      "type": "question",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-26T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-26T13:46:04.430Z",
+          "answer": null,
+          "score": "correct",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        },
+        {
+          "date": "2026-09-28T13:46:04.430Z",
+          "answer": null,
+          "score": "correct",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 10,
+      "nextReview": "2026-10-29T13:46:04.430Z",
+      "due": false
+    },
+    "5bc9cb3c5a9a": {
+      "question": "¿Es idempotente el método HTTP PATCH?",
+      "type": "question",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-28T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-28T13:46:04.430Z",
+          "answer": null,
+          "score": "partial",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 2,
+      "nextReview": "2026-10-21T13:46:04.430Z",
+      "due": false
+    },
+    "14e24c122dec": {
+      "question": "¿Por qué es importante que los métodos HTTP DELETE y PUT sean idempotentes?",
+      "type": "doubt",
+      "concept": null,
+      "definition": null,
+      "sourceNote": "demo-seed",
+      "sourceBloque": 0,
+      "createdAt": "2026-09-27T13:46:04.430Z",
+      "reviews": [
+        {
+          "date": "2026-09-27T13:46:04.430Z",
+          "answer": null,
+          "score": "partial",
+          "agentFeedback": null,
+          "sessionId": "demo-seed"
+        }
+      ],
+      "interval": 1,
+      "nextReview": null,
+      "due": true
+    }
+  },
+  "version": 2,
+  "lastUpdated": "2026-10-19T13:46:04.430Z"
+}

@@ -15,6 +15,19 @@ const __dirname = path.dirname(__filename)
 const DATA_DIR = process.env.KBL_DATA_DIR || path.join(__dirname, '..', 'data')
 const STORE_PATH = process.env.ACTIVE_RECALL_STORE_PATH || path.join(DATA_DIR, 'active-recall-store.json')
 
+// First-boot seed: when the store does not exist yet (fresh clone), populate the
+// store with bundled demo questions so Active Recall dashboards render with
+// content instead of empty state. See server/seed/ and docs/DEVLOG.md.
+const SEED_PATH = process.env.ACTIVE_RECALL_SEED_PATH || path.join(__dirname, '..', 'seed', 'active-recall-seed.json')
+
+function readSeed() {
+  try {
+    return JSON.parse(fs.readFileSync(SEED_PATH, 'utf8'))
+  } catch {
+    return null // No seed available — initialize empty.
+  }
+}
+
 // --- Hash a question to a stable ID ---
 function hashQuestion(text) {
   return crypto.createHash('sha256').update(text.trim().toLowerCase()).digest('hex').slice(0, 12)
@@ -46,7 +59,9 @@ function writeStore(data) {
 // --- Initialize empty store ---
 function ensureStore() {
   if (!fs.existsSync(STORE_PATH)) {
-    writeStore({ questions: {}, version: 2, lastUpdated: new Date().toISOString() })
+    // Fresh clone: boot from bundled seed data (or empty when no seed file).
+    const seed = readSeed()
+    writeStore(seed || { questions: {}, version: 2, lastUpdated: new Date().toISOString() })
   }
 }
 
