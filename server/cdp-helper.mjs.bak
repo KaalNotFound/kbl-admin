@@ -1,0 +1,227 @@
+/**
+ * CDP Helper — Conexión a Brave (localhost:9222) para consultar pestañas y WhatsApp.
+ * Reutiliza patrones de whatsapp-sender.mjs y extract-conversation.mjs del vault.
+ */
+import puppeteer from 'puppeteer-core'
+
+const CDP_URL = 'http://127.0.0.1:9222'
+const WA_URL = 'https://web.whatsapp.com'
+
+let _browser = null
+let _cdpSession = null
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms))
+}
+
+/**
+ * Conecta a Brave vía CDP con retry exponencial (3 intentos).
+ */
+export async function connectToBrave() {
+  if (_browser && _browser.isConnected()) return _browser
+  for (let i = 0; i < 3; i++) {
+    try {
+      _browser = await puppeteer.connect({ browserURL: CDP_URL, defaultViewport: null })
+      return _browser
+    } catch (err) {
+      if (i === 2) throw new Error(`CDP no conecta en ${CDP_URL}: ${err.message}`)
+      await sleep(1000 * Math.pow(2, i) + Math.floor(Math.random() * 200))
+    }
+  }
+}
+
+/**
+ * Desconecta la sesión CDP (libera recursos).
+ */
+export function disconnectCDP() {
+  if (_cdpSession) { _cdpSession = null }
+  if (_browser) { try { _browser.disconnect() } catch {}; _browser = null }
+}
+
+/**
+ * Encuentra la página de WhatsApp Web activa.
+ */
+export async function getWhatsAppPage(browser) {
+  const pages = await browser.pages()
+  const wa = pages.find(p => p.url().startsWith(WA_URL))
+  if (!wa) throw new Error('WhatsApp Web no está abierta en ninguna pestaña')
+  return wa
+}
+
+/**
+ * Verifica estado de login en WhatsApp.
+ */
+async function ensureLoggedIn(wa) {
+  return await wa.evaluate(() => {
+    if (document.querySelector('footer') && document.querySelector('div[contenteditable="true"]'))
+      return 'ready'
+    if (document.querySelector('canvas')) return 'qr'
+    if (document.querySelector('[data-testid="reconnect"], [data-testid="phone-disconnected"]'))
+      return 'disconnected'
+    if (document.querySelector('.landing-title, [data-testid="intro"], [data-testid="qr-code"]'))
+      return 'landing'
+    return 'unknown'
+  })
+}
+
+/**
+ * Obtiene lista de chats WhatsApp con mensajes no leídos.
+ * Busca en la lista principal (sidebar) sin abrir cada chat.
+ */
+export async function scanUnreadChats() {
+  const browser = await connectToBrave()
+  const wa = await getWhatsAppPage(browser)
+  const state = await ensureLoggedIn(wa)
+  if (state !== 'ready') throw new Error(`WhatsApp no está listo: ${state}`)
+
+  return await wa.evaluate(() => {
+    const results = []
+    const rows = document.querySelectorAll('[role="row"]')
+    for (const row of rows) {
+      // Skip if not a chat row (menu items etc.)
+      const cell = row.querySelector('div[tabindex="0"]')
+      if (!cell) continue
+
+      const name = cell.textContent?.trim() || ''
+      if (!name) continue
+
+      // Unread badge: check aria-label on any descendent with "no leídos" or "unread"
+      let unread = 0
+      const badges = row.querySelectorAll('[aria-label*="no leídos"], [aria-label*="unread"]')
+      for (const b of badges) {
+        const num = parseInt(b.textContent, 10)
+        if (!isNaN(num)) unread += num
+      }
+
+      // Last message preview
+      const lastMsg = row.querySelector('[data-testid="last-msg"]')?.textContent?.trim()
+        || row.querySelector('span[data-testid="conversation-info-row"]')?.textContent?.trim()
+        || ''
+
+      // Timestamp
+      const timeEl = row.querySelector('time')?.getAttribute('datetime')
+        || row.querySelector('[data-testid="conversation-info"] time')?.getAttribute('datetime')
+        || ''
+
+      results.push({
+        name: name.slice(0, 60),
+        last_message: lastMsg.slice(0, 120),
+        timestamp: timeEl || new Date().toISOString(),
+        unread,
+        avatar_letter: name.charAt(0).toUpperCase(),
+      })
+    }
+    return results.filter(c => c.unread > 0 || c.last_message)
+  })
+}
+
+/**
+ * Abre un chat de WhatsApp y extrae los mensajes visibles.
+ */
+export async function extractConversation(contactName) {
+  const browser = await connectToBrave()
+  const wa = await getWhatsAppPage(browser)
+  const state = await ensureLoggedIn(wa)
+  if (state !== 'ready') throw new Error(`WhatsApp no está listo: ${state}`)
+
+  // — CDP session for clicks —
+  const cdp = _cdpSession || await wa.createCDPSession()
+  if (!_cdpSession) _cdpSession = cdp
+
+  // 1. Search for contact
+  await wa.evaluate((name) => {
+    const input = document.querySelector('input[data-tab="3"]')
+    if (!input) throw new Error('No se encontró el campo de búsqueda')
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+    setter.call(input, name)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }, contactName)
+  await sleep(2000)
+
+  // 2. Click the matching row
+  const coords = await wa.evaluate((name) => {
+    const rows = document.querySelectorAll('[role="row"]')
+    for (const row of rows) {
+      if (!row.textContent?.includes(name)) continue
+      const cell = row.querySelector('div[tabindex="0"]')
+      if (!cell) continue
+      const r = cell.getBoundingClientRect()
+      return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) }
+    }
+    return null
+  }, contactName)
+  if (!coords) throw new Error(`Contacto "${contactName}" no encontrado`)
+
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: coords.x, y: coords.y, button: 'left', clickCount: 1 })
+  await sleep(50)
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: coords.x, y: coords.y, button: 'left', clickCount: 1 })
+  await sleep(1500)
+
+  // 3. Extract visible messages
+  const messages = await wa.evaluate(() => {
+    const results = []
+
+    // Try the conversation panel first
+    const panel = document.querySelector('[data-testid="conversation-panel-messages"]')
+      || document.querySelector('main')
+    if (!panel) return results
+
+    const messageEls = panel.querySelectorAll('[data-testid="conversation-panel-messages"] [data-pre-plain-text], ' +
+      'div.message-in, div.message-out, [data-testid="msg-container"]')
+
+    // Fallback: all selectable text spans with parent context
+    if (messageEls.length === 0) {
+      const spans = panel.querySelectorAll('span.selectable-text, span.copyable-text')
+      const seen = new Set()
+      for (const span of spans) {
+        const text = span.textContent?.trim()
+        if (!text || seen.has(text)) continue
+        seen.add(text)
+
+        // Determine if outgoing by traversing up
+        let outgoing = false
+        let p = span.parentElement
+        while (p) {
+          if (p.getAttribute?.('data-is-outgoing') === 'true') { outgoing = true; break }
+          if (p.getAttribute?.('data-is-outgoing') === 'false') break
+          p = p.parentElement
+        }
+
+        results.push({
+          text,
+          outgoing,
+          timestamp: new Date().toISOString(),
+        })
+      }
+      return results
+    }
+
+    // Primary: trust the data-pre-plain-text attribute on message wrappers
+    const msgDivs = panel.querySelectorAll('div[data-pre-plain-text]')
+    for (const div of msgDivs) {
+      const tsAttr = div.getAttribute('data-pre-plain-text') || ''
+      // Format: [HH:MM, DD/MM/YYYY] Name: message
+      const text = div.textContent?.trim() || ''
+      if (!text) continue
+
+      // Determine direction
+      let outgoing = false
+      let p = div.parentElement
+      while (p) {
+        if (p.getAttribute?.('data-is-outgoing') === 'true') { outgoing = true; break }
+        if (p.getAttribute?.('data-is-outgoing') === 'false') break
+        p = p.parentElement
+      }
+
+      results.push({
+        text: text.slice(0, 500),
+        outgoing,
+        timestamp: tsAttr,
+      })
+    }
+
+    return results
+  })
+
+  return messages
+}

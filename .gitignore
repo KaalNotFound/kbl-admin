@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables (contains secrets)
+.env
+.env.local
+.env.*.local
+
+# Private financial config
+server/config/finanzas-perfil.json
+
+# Runtime data stores (personal learning data; the repo ships with seed data)
+server/data/
+*.json.tmp
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+
+# Vault-migration artifacts (not part of the project)
+__índice.md
+filelist.txt
+_filelist.txt
+_dependencies.json
+FEEDBACK.md
+*.bat
+
+# Lock file (optional — uncomment if you prefer no lock)
+# package-lock.json

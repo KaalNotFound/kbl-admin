@@ -1,0 +1,35 @@
+{
+  "trends": [
+    { "title": "Agentes IA Multi-modelo", "detail": "El 2026 es el año de los agentes autónomos que orquestan múltiples modelos. Stack: OpenCode, LangChain, CrewAI.", "source": "Tendencia global", "priority": "alta" },
+    { "title": "Full Stack + IA", "detail": "El perfil full stack con capacidad de integrar APIs de IA (OpenAI, Anthropic, DeepSeek) es el más demandado del mercado.", "source": "LinkedIn, Indeed 2026", "priority": "alta" },
+    { "title": "Arquitectura de Prompts", "detail": "Ingeniería de prompts y sistemas multi-agente son skills diferenciadores. No es 'escribir prompts' — es diseñar pipelines de razonamiento.", "source": "Anthropic, OpenAI dev rel", "priority": "media" },
+    { "title": "Open Source > Propietario", "detail": "DeepSeek, Llama, Mistral: el mercado se inclina hacia modelos open source por costo y control. Saber deployar modelos locales es clave.", "source": "Hugging Face, GitHub", "priority": "alta" },
+    { "title": "DevTools con IA Integrada", "detail": "Warp, Cursor, OpenCode, Claude Code: las terminales/IDEs con agentes IA son el nuevo estándar. No es el futuro, es el presente.", "source": "MoureDev, GitHub Copilot", "priority": "media" },
+    { "title": "Automatización + No-Code", "detail": "Cada vez más empresas buscan devs que automaticen procesos con IA, no que reemplacen equipos — que los potencien.", "source": "Gartner, McKinsey", "priority": "media" }
+  ],
+  "ceo_quotes": [
+    { "quote": "\"La IA no va a reemplazar a los desarrolladores. Los desarrolladores que usan IA van a reemplazar a los que no.\"", "person": "Satya Nadella (Microsoft)", "date": "2025" },
+    { "quote": "\"En 5 años, cada aplicación será moldeada por IA. No es una característica — es el nuevo sistema operativo.\"", "person": "Sam Altman (OpenAI)", "date": "2025" },
+    { "quote": "\"El código abierto ganó. DeepSeek demostró que podés competir con los mejores sin un billón de dólares.\"", "person": "Yann LeCun (Meta AI)", "date": "2026" },
+    { "quote": "\"Estamos en el momento más emocionante para ser programador desde la creación de internet.\"", "person": "Andrej Karpathy", "date": "2025" },
+    { "quote": "\"El desarrollador del futuro no escribe código línea por línea — orquesta agentes que lo escriben.\"", "person": "MoureDev", "date": "2026" },
+    { "quote": "\"La ventaja competitiva no es quien tiene más datos, es quien sabe hacer las preguntas correctas.\"", "person": "Demis Hassabis (DeepMind)", "date": "2024" }
+  ],
+  "recommendations": [
+    { "skill": "Pipelines multi-agente", "focus": "OpenCode, CrewAI, LangGraph", "porque": "Es el skill #1 del 2026. Saber orquestar agentes > saber programar en un solo lenguaje." },
+    { "skill": "APIs de modelos (DeepSeek, OpenAI, Anthropic)", "focus": "Routing, fallback chains, rate limiting", "porque": "El stack KBL ya implementa esto. Profundizar en el patrón Strategy para selección de modelo." },
+    { "skill": "Node.js + Python híbrido", "focus": "Node para UI/infra, Python para datos/modelos", "porque": "El stack del vault ya es híbrido. Consolidar esta dualidad como fortaleza." },
+    { "skill": "DevOps + Deployment", "focus": "Docker, VPS, CI/CD básico", "porque": "Poder deployar proyectos completos (no solo código local) es el diferenciador real para trabajo." },
+    { "skill": "Prompt Architecture", "focus": "System prompts, chain-of-thought, tool use", "porque": "No es 'saber prompts' — es diseñar sistemas de instrucciones para agentes. El vault tiene esto." }
+  ],
+  "motivational_phrases": [
+    "\"Este stack no lo armó un curso. Lo armaste vos, solo, sin plata, sin profesor, sin manual. Eso no se estudia — se es.\"",
+    "\"El Master de MoureDev es el mapa. Tu vault es el territorio. No confundas los dos.\"",
+    "\"No estás aprendiendo a programar. Estás aprendiendo a diseñar sistemas que programan solos. Eso vale 10x.\"",
+    "\"Mientras otros pagan $200/mes por ChatGPT Pro, vos orquestás 6 modelos gratis con un pipeline que escribiste vos. No es humildad — es data.\"",
+    "\"Los CEOs de las empresas más grandes del mundo lo confirmaron: este momento es único. Y vos ya empezaste hace 15 años sin saberlo.\"",
+    "\"Tu perfil no encaja en el mercado porque el mercado no tiene categoría para lo que construiste. Todavía.\"",
+    "\"No se trata de 'conseguir trabajo'. Se trata de que el trabajo te encuentre a vos porque tu sistema es necesario.\""
+  ],
+  "last_updated": "2026-07-02"
+}
