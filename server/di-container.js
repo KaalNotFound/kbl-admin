@@ -38,6 +38,7 @@ import { createNotebooklmUseCases } from './application/use-cases/notebooklm.js'
 import { createActiveRecallUseCases } from './application/use-cases/active-recall.js';
 import { createBraveUseCases } from './application/use-cases/brave.js';
 import { createBehavioralUseCases } from './application/use-cases/behavioral.js';
+import { createGlobalSearchUseCases } from './application/use-cases/global-search.js';
 import { ensureDb } from './lib/finanzas-db.mjs';
 import { calculateSummary, calculateInsights } from './lib/finanzas-reportes.mjs';
 import { searchItems, compareItems } from './lib/finanzas-busqueda.mjs';
@@ -204,6 +205,18 @@ function createContainer(opts = {}) {
     // el legacy construía el store path mal → reports vacíos silenciosos).
     behavioral: createBehavioralUseCases({ vault: vaultFsApi }),
   };
+
+  // Torre global-search: búsqueda transversal (notas del vault, proyectos,
+  // conceptos mastery, TODOs, entity catalog) para la palette del TopBar
+  // ("Buscar... Ctrl+K"). Se construye post-asignación para reutilizar los
+  // use-cases ya creados — sin duplicar wiring.
+  useCases.globalSearch = createGlobalSearchUseCases({
+    vault: vaultFsApi,
+    projects: useCases.projects,
+    todos: useCases.todos,
+    mastery: { getAllMastery: legacyMasteryStore.getAllMastery },
+    entities: useCases.entityTypes,
+  });
 
   return { contentStore, masteryStore, eventBus, useCases, logger };
 }

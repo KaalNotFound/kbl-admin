@@ -3,6 +3,42 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-19 — Global search palette wired (Buscar... Ctrl+K is now real)
+
+**Impact:** the TopBar global search wrote to `useAppStore.search`, which
+no component consumed — typing in "Buscar... Ctrl+K" did nothing, exactly
+what a demo reviewer would call out. Both halves now exist:
+
+**Backend (TDD — 7 tests in `server/__tests__/global-search.test.js`):**
+
+- New `GET /api/global-search?q=<term>` route (`server/routes/global-search.mjs`,
+  thin, DI-only) powered by a new `global-search` use-case
+  (`server/application/use-cases/global-search.js`).
+- Searches five domains, every result carries a `tab` field for frontend
+  navigation: vault markdown notes (title match + bounded content scan with
+  snippet extraction, depth ≤ 4, capped at 6 per group), projects,
+  study concepts (mastery store), todos and the entity catalog.
+- Wired post-assignment in the DI container (reuses already-built
+  `projects`, `todos`, `entityTypes` use-cases + the legacy mastery store).
+- Guardrails: min query length 2, malformed/unicode terms never crash,
+  empty vaults degrade to fewer/empty groups silently.
+
+**Frontend:**
+
+- New `src/api/search.ts` typed client + barrel re-export.
+- New `src/components/layout/SearchPalette.tsx`: debounced (250ms) dropdown
+  under the TopBar input — grouped results with kind chip, meta/snippet,
+  keyboard navigation (↑/↓, Enter navigates and clears, Esc closes),
+  outside-click dismiss, Ctrl/Cmd+K global focus shortcut as promised by
+  the placeholder. TopBar now renders the palette instead of the dead input.
+
+**Verification:** 85/85 Vitest; Vite build clean; live puppeteer smoke on a
+5175+3003 test pair: dropdown renders groups, Enter/arrow navigation lands
+on the target dashboard and clears the input, Ctrl+K focuses, Esc closes,
+zero page errors. Frontend TS has pre-existing strict-mode errors elsewhere
+(23, unchanged); none in the new files.
+
+
 ## 2026-10-19 — Finanzas search dead on fresh clones; demo-vault seeded
 
 **Impact:** on a fresh clone the whole Finanzas search (and summary,
