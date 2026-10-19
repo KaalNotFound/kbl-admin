@@ -46,4 +46,86 @@ router.get('/active-recall/stats', async (req, res) => {
   }
 })
 
+// ------------------------------------------------------------------
+// HTTP surface consumed by src/api/active-recall.ts — restored after the
+// ADR-025 refactor dropped it (every Active Recall panel 404'd).
+// ------------------------------------------------------------------
+
+// GET /active-recall/all → { questions: ActiveRecallDueItem[] }
+router.get('/active-recall/all', async (req, res) => {
+  try {
+    const result = await req.useCases.activeRecall.getAll()
+    res.json(result.value)
+  } catch (e) {
+    res.status(500).json(logAndRespond('active-recall', 'GET', '/api/active-recall/all', e, 'Error al cargar preguntas'))
+  }
+})
+
+// GET /active-recall/due → ActiveRecallDueResponse { questions, stats }
+router.get('/active-recall/due', async (req, res) => {
+  try {
+    const result = await req.useCases.activeRecall.getDueWithStats(req.query || {})
+    res.json(result.value)
+  } catch (e) {
+    res.status(500).json(logAndRespond('active-recall', 'GET', '/api/active-recall/due', e, 'Error al cargar preguntas pendientes'))
+  }
+})
+
+// GET /active-recall/question/:id → ActiveRecallQuestion | 404
+router.get('/active-recall/question/:id', async (req, res) => {
+  try {
+    const result = await req.useCases.activeRecall.getQuestionById(req.params.id)
+    if (result.status) return res.status(result.status).json({ error: result.error })
+    res.json(result.value)
+  } catch (e) {
+    res.status(500).json(logAndRespond('active-recall', 'GET', '/api/active-recall/question/:id', e, 'Error al cargar la pregunta'))
+  }
+})
+
+// POST /active-recall/submit → ActiveRecallSubmitResponse
+router.post('/active-recall/submit', async (req, res) => {
+  try {
+    const result = await req.useCases.activeRecall.submit(req.body || {})
+    if (result.status) return res.status(result.status).json({ success: false, error: result.error })
+    res.json({ success: true, ...result.value })
+  } catch (e) {
+    res.status(500).json(logAndRespond('active-recall', 'POST', '/api/active-recall/submit', e, 'Error al guardar la respuesta'))
+  }
+})
+
+// POST /active-recall/ingest → { success, imported, stats }
+router.post('/active-recall/ingest', async (req, res) => {
+  try {
+    const result = await req.useCases.activeRecall.ingest(req.body?.dir)
+    const stats = await req.useCases.activeRecall.getStats()
+    res.json({ success: true, imported: result.value, stats })
+  } catch (e) {
+    res.status(500).json(logAndRespond('active-recall', 'POST', '/api/active-recall/ingest', e, 'Error al importar desde el vault'))
+  }
+})
+
+// POST /active-recall/inject → { success, seeded, stats }
+router.post('/active-recall/inject', async (req, res) => {
+  try {
+    const result = await req.useCases.activeRecall.inject(req.body || {})
+    if (result.status) return res.status(result.status).json({ success: false, error: result.error })
+    const stats = await req.useCases.activeRecall.getStats()
+    res.json({ success: true, seeded: result.value.seeded, stats })
+  } catch (e) {
+    res.status(500).json(logAndRespond('active-recall', 'POST', '/api/active-recall/inject', e, 'Error al inyectar la pregunta'))
+  }
+})
+
+// POST /active-recall/seed → { success, seeded, stats }
+router.post('/active-recall/seed', async (req, res) => {
+  try {
+    const result = await req.useCases.activeRecall.seed(req.body || {})
+    if (result.status) return res.status(result.status).json({ success: false, error: result.error })
+    const stats = await req.useCases.activeRecall.getStats()
+    res.json({ success: true, seeded: result.value.seeded, stats })
+  } catch (e) {
+    res.status(500).json(logAndRespond('active-recall', 'POST', '/api/active-recall/seed', e, 'Error al sembrar preguntas'))
+  }
+})
+
 export default router

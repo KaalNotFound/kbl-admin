@@ -236,10 +236,12 @@ describe('GET /api/study/data (restored study endpoints)', () => {
 })
 
 describe('GET /api/study/history (restored study endpoints)', () => {
-  it('returns an array of history items', async () => {
+  it('returns the StudyHistoryResponse envelope (history, items, stats)', async () => {
     const res = await request(app).get('/api/study/history')
     expect(res.status).toBe(200)
-    expect(Array.isArray(res.body)).toBe(true)
+    expect(Array.isArray(res.body.items)).toBe(true)
+    expect(res.body).toHaveProperty('history')
+    expect(res.body.stats).toHaveProperty('total')
   })
 })
 

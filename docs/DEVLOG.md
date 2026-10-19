@@ -3,6 +3,52 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-19 — Estudio section: restored dropped active-recall + study/history contracts (TDD)
+
+**Impact:** clicking the Estudio section (and every Active Recall panel)
+hit endpoints the ADR-025 DI refactor had dropped, and the Mapa sub-tab
+crashed the entire React tree (`items is not iterable`). Combined with
+the missing process-level safety net, user-facing clicks took the page
+or the server down.
+
+**Root causes:**
+
+1. `src/api/active-recall.ts` consumes a 7-endpoint REST surface
+   (`GET /all`, `GET /due`, `GET /question/:id`, `POST /submit`,
+   `/ingest`, `/inject`, `/seed`); the refactored router only kept
+   `POST /review`, `POST /due` and `GET /stats` — everything else 404'd.
+2. `GET /api/study/history` returned the bare array from
+   `getStudyHistory()` instead of the `StudyHistoryResponse` envelope
+   (`{ history, items, stats }`); `setItems(r.items)` set `undefined`
+   and `StudyHashmap` crashed iterating it.
+
+**Fix (strict TDD — RED then GREEN):**
+
+- New test files: `server/__tests__/active-recall-routes.test.js`
+  (12 tests) and `server/__tests__/study-history-routes.test.js`
+  (2 tests), written against the frontend contract and confirmed
+  failing (404 / missing envelope) before implementation.
+- `server/application/use-cases/active-recall.js`: added `getAll`,
+  `getDueWithStats`, `getQuestionById`, `submit`, `ingest`, `seed`,
+  `inject` delegating to the legacy store port.
+- `server/di-container.js`: store port extended with `getAllQuestions`,
+  `getQuestion`, `ingestFromActiveRecall`, `seedQuestions` plus
+  `defaultIngestDir` (`ACTIVE_RECALL_DIR` from the vault adapter).
+- `server/routes/active-recall.mjs`: mounted the seven missing routes.
+- `server/application/use-cases/study-data.js`: `getHistory` now adapts
+  the array into the full envelope (grouping by fecha + derived stats:
+  total/correct/partial/incorrect/streak/today).
+- Updated the interim bare-array expectation in
+  `server/__tests__/api.test.js` to the envelope contract.
+
+**Verification:** full suite green — 75/75 Vitest (incl. the 14 new
+RED→GREEN tests), 21 contract, 33 fase5, 26 fase6, 14 active-recall
+store, acceptance, observabilidad. Live click-drive with puppeteer
+covered every Estudio sub-tab (Notas, Cognitivo ×4, Mapa, Anki,
+Pomodoro) and every main tab: server alive after each click, zero
+React errors, Mapa renders.
+
+
 ## 2026-10-19 — Process-level safety net for CDP-attached integrations
 
 **Impact:** on a machine with a real Brave browser exposing the CDP port

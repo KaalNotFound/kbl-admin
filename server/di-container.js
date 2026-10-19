@@ -182,10 +182,15 @@ function createContainer(opts = {}) {
     // #infra directo (violación R1 resuelta; bug fix: /review usaba el path DI
     // desalineado de mastery → 500; ahora delega al legacy que funcionaba).
     activeRecall: createActiveRecallUseCases({
+      defaultIngestDir: vaultFs.ACTIVE_RECALL_DIR,
       store: {
         getDueQuestions: activeRecallStore.getDueQuestions,
         submitReview: activeRecallStore.submitReview,
         getStats: activeRecallStore.getStats,
+        getAllQuestions: activeRecallStore.getAllQuestions,
+        getQuestion: activeRecallStore.getQuestion,
+        ingestFromActiveRecall: activeRecallStore.ingestFromActiveRecall,
+        seedQuestions: activeRecallStore.seedQuestions,
       },
     }),
     // Torre brave (ADR-025): adapter CDP inyectado como port — el router
