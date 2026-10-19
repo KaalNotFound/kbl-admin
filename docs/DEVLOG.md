@@ -3,6 +3,41 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-19 — Finanzas search dead on fresh clones; demo-vault seeded
+
+**Impact:** on a fresh clone the whole Finanzas search (and summary,
+insights, compare, food-sora) degraded forever: `loadCompras()` and
+`loadFoodSora()` called `readdirSync()` on vault paths that only exist
+in a mature vault, `initDb()` threw ENOENT, the `dbInitFailed` latch
+set, and every query returned empty. The log spammed
+`Finanzas DB init error: ENOENT .../Compras` on boot.
+
+**Fix (TDD — 3 new tests in `server/__tests__/finanzas-db.test.js`):**
+
+- `server/lib/finanzas-db.mjs`: `loadCompras()` and `loadFoodSora()`
+  now exit gracefully when their vault source dirs don't exist, matching
+  the `loadAssets()`/`loadWallet()` guards — the DB initializes clean on
+  an empty vault instead of latching the failure.
+- `demo-vault/`: seeded `02 - AREAS/008 - Trazabilidad Compras/` with
+  Compras (2 tickets, 7 items in inline-fields format), Presupuesto
+  (`_budget.md`) and Patrimonio samples, plus
+  `08 - SYSTEM/state/exception-log.json` (previously ENOENT noise from
+  the todos use-case on every boot).
+- `vite.config.js`: dev server port and API proxy target now honor
+  `VITE_UI_PORT` / `VITE_API_PORT` so test instances can run beside a
+  live dev session.
+
+**Verification:** 78/78 Vitest (incl. finanzas-db resilience tests),
+contract/fases suites green. Live UI smoke (puppeteer on a 5175+3003
+test pair): Compras search input typed "aceite" → result row renders
+with purchase history; store filter populated with seeded comercios;
+zero page errors.
+
+**Known follow-up:** the TopBar global search (`Buscar... Ctrl+K`)
+writes to `useAppStore.search` which no component consumes — it is
+decorative; per-dashboard searches are the real feature.
+
+
 ## 2026-10-19 — Estudio section: restored dropped active-recall + study/history contracts (TDD)
 
 **Impact:** clicking the Estudio section (and every Active Recall panel)

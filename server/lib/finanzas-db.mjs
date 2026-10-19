@@ -101,6 +101,10 @@ async function initDb() {
 }
 
 function loadCompras() {
+  // Fresh clones / new vaults may not have the Compras folder yet — an
+  // unguarded readdirSync threw ENOENT, initDb latched dbInitFailed and
+  // every downstream search/summary degraded forever (see DEVLOG 2026-10-19).
+  if (!fs.existsSync(COMPRAS_DIR)) return
   const files = fs.readdirSync(COMPRAS_DIR).filter(f => f.endsWith('.md'))
   const insert = db.prepare('INSERT INTO items (fecha, comercio, producto, cantidad, precio_total, categoria, archivo) VALUES (?, ?, ?, ?, ?, ?, ?)')
   let itemsOk = 0
@@ -146,6 +150,7 @@ function loadCompras() {
 }
 
 function loadFoodSora() {
+  if (!fs.existsSync(DAILY_DIR)) return
   const foodFiles = fs.readdirSync(DAILY_DIR).filter(f => f.endsWith('.md'))
   const insertF = db.prepare('INSERT OR REPLACE INTO food_sora (fecha, madrugada, manana, mediodia, tarde, noche) VALUES (?, ?, ?, ?, ?, ?)')
   const fields = ['madrugada_food_sora', 'manana_food_sora', 'mediodia_food_sora', 'tarde_food_sora', 'noche_food_sora']
