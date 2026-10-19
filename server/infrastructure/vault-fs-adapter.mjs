@@ -5,10 +5,19 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Vault root: server/infrastructure/ -> server/ -> KBL_Admin/ -> 01 - PROYECTOS/ -> KBL_SYSTEM/
-// (Torre vault-helpers ADR-025: movido desde lib/vault-helpers.mjs — misma
-//  profundidad (hermanos bajo server/), 4 niveles hacia KBL_SYSTEM)
-export const VAULT_ROOT = path.resolve(__dirname, '..', '..', '..', '..')
+// Vault integration root.
+// Resolution order:
+//   1. KBL_VAULT_ROOT env var  — points the app at a real Obsidian vault.
+//   2. default                 — the bundled demo-vault/ inside this repo, so a
+//                                fresh clone renders populated dashboards without
+//                                any configuration.
+// History: users originally crudely resolved 4 levels up into a fixed
+// Johnny-Decimal layout that no longer matched after the vault was
+// restructured; the env override decouples the app from folder layout.
+const ADMIN_ROOT = path.resolve(__dirname, '..', '..') // server/infrastructure → KBL_Admin
+export const VAULT_ROOT = process.env.KBL_VAULT_ROOT
+  ? path.resolve(process.env.KBL_VAULT_ROOT)
+  : path.join(ADMIN_ROOT, 'demo-vault')
 
 // --- Shared constants (DRY: STUDY_PATH was defined 3x across study, active-recall, mastery) ---
 export const STUDY_PATH = path.resolve(VAULT_ROOT, '02 - APRENDIZAJE', 'MoureDev-Master')
