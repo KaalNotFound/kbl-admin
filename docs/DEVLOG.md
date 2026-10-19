@@ -3,6 +3,30 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-19 — Process-level safety net for CDP-attached integrations
+
+**Impact:** on a machine with a real Brave browser exposing the CDP port
+(9222), clicking the Navegador/Conversaciones tabs could kill the whole
+Node process — puppeteer attaches to the real browser, and detach/target
+events fire rejections outside any request scope. With no
+`uncaughtException` / `unhandledRejection` handlers, one event took the
+API down on a single UI click.
+
+**Fix:**
+
+- `server/index.js`: global `process.on('unhandledRejection')` and
+  `process.on('uncaughtException')` handlers — log loudly, keep serving.
+  External-service failures already surfaced as 5xx via route handlers;
+  this catches the async strays that routes cannot see.
+- `server/infrastructure/brave-cdp-adapter.js`: on successful
+  `puppeteer.connect()`, register `browser.on('disconnected')` to null out
+  the cached handle so the next call reconnects instead of using a dead
+  handle.
+
+**Verification:** full suite green (61/61 Vitest, 21 contract, 33 fase5,
+26 fase6, 14 active-recall, acceptance, observabilidad).
+
+
 ## 2026-10-19 — Restore study data endpoints (orphaned by the DI refactor)
 
 **Impact:** the Study dashboard's Notas/Conceptos/Preguntas/Dudas tabs called

@@ -7,6 +7,18 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// --- Process-level safety net ---
+// A CDP/puppeteer session attached to a real browser can fire rejections
+// outside any request scope (target closed mid-evaluation, WebSocket drop,
+// disconnect events). Without handlers those kill the whole Node process,
+// taking the API down on a single UI click. Log loudly and keep serving.
+process.on('unhandledRejection', (reason) => {
+  console.error('[process] unhandledRejection:', reason instanceof Error ? (reason.stack || reason.message) : reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[process] uncaughtException:', err?.stack || err);
+});
+
 // Infrastructure
 import { createContainer } from './di-container.js';
 import { createDiMiddleware } from './middleware/di.mjs';
