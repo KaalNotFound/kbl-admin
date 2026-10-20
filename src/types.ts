@@ -753,6 +753,22 @@ export interface TodoItem {
   state: TodoState
   priority: string
   updated: string | null
+  /**
+   * Phase 4 write-back: 0-based line index of the item's `##` heading inside
+   * `_PENDING.md` — the stable toggle target when duplicate titles exist.
+   */
+  line?: number
+}
+
+// Phase 4 write-back: the toggle response integrates the refreshed item so
+// the row can update in place (the markdown SSOT is re-read server-side).
+export interface TodoToggleResponse {
+  ok: boolean
+  item: TodoItem
+  sources?: SourceFile[]
+  /** The marker that flipped. `mode`: checkbox bracket vs Estado value. */
+  toggled?: { from: string; to: string; mode: 'checkbox' | 'estado' }
+  error?: string
 }
 
 export interface TodosResponse {

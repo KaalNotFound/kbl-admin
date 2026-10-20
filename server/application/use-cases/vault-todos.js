@@ -7,8 +7,21 @@
  *
  * Hanoi contract (preservado del router): ORIGEN = _PENDING.md + logs (state),
  * DESTINO = dashboard del operador.
+ *
+ * Phase 4 (write-back): toggleTodo() closes the loop — the operator flips a
+ * task's done state from the dashboard and the ONLY edit is that task's
+ * state marker inside `_PENDING.md`. Format reality (verified 2026-10-20):
+ * the file is SECTION-based (## Title + **Estado:**), not checkbox-per-line,
+ * and some sections ALSO carry an Obsidian-native `- [ ]`/`- [x]` line in
+ * their body. One done-marker per item, resolved in order:
+ *   1. checkbox line inside the item's span → flip ONLY the bracket chars;
+ *   2. otherwise the **Estado:** line       → flip ONLY the value segment
+ *     (done-family ↔ 'todo'), prefix + trailing whitespace byte-preserved.
+ * Everything else in the file stays byte-identical, so the markdown remains
+ * the SSOT and external readers (Obsidian, CLI mirrors) see the same data.
  */
 import path from 'path'
+import fs from 'fs'
 
 // --- Pending.md parsing (mirror verbatim de 07 - SCRIPTS/tools/todo-crud.mjs) ---
 
@@ -45,12 +58,16 @@ function parseSections(content) {
   const sections = []
   const lines = content.split('\n')
   let current = null
-  for (const line of lines) {
+  // Phase 4: stable 0-based line index of each `##` heading. The file is the
+  // SSOT and duplicate titles exist, so line-based targeting beats content
+  // matching. Line splitting is \n-only and CRLF normalization (readPending)
+  // never changes the line count, so indices map 1:1 onto the RAW file bytes.
+  lines.forEach((line, index) => {
     const m = line.match(/^##\s+(.+)$/)
     if (m) {
       if (current) sections.push(current)
-      current = { title: m[1], body: '', state: null, priority: null, updated: null }
-      continue
+      current = { title: m[1], body: '', state: null, priority: null, updated: null, line: index }
+      return
     }
     if (current) {
       current.body += (current.body ? '\n' : '') + line
@@ -67,9 +84,14 @@ function parseSections(content) {
         if (um) current.updated = um[1].trim()
       }
     }
-  }
+  })
   if (current) sections.push(current)
   return sections
+}
+
+/** Stable item id — same slug the getTodos consumer shape exposes (single source). */
+function sectionId(s) {
+  return slugify(s.title.split(' (')[0], (s.title.match(/(\d{4}-\d{2}-\d{2})/) || [null, ''])[1])
 }
 
 /**
@@ -102,11 +124,14 @@ export function createTodosUseCases({ vault }) {
     if (error) return { status: 404, error }
 
     const todos = sections.map((s) => ({
-      id: slugify(s.title.split(' (')[0], (s.title.match(/(\d{4}-\d{2}-\d{2})/) || [null, ''])[1]),
+      id: sectionId(s),
       title: s.title,
       state: normalizeState(s.state),
       priority: s.priority ? s.priority.replace(/\*\*/g, '') : 'Baja',
       updated: s.updated || null,
+      // Phase 4 (additive): 0-based heading index — stable write-back target
+      // when duplicate titles exist. Existing consumers ignore it.
+      line: s.line,
     }))
 
     const countBy = (states) => todos.filter((t) => states.includes(t.state)).length
@@ -128,9 +153,154 @@ export function createTodosUseCases({ vault }) {
     }
   }
 
+  // ─── Phase 4: write-back toggle ───────────────────────────────────────────
+
+  // `## Heading` → `- [ ]`/`- [x]` checkbox line. `[-*]` tolerates `-` and `*`
+  // bullets; the inner char is the ONLY byte group that may change.
+  const CHECKBOX_RE = /^(\s*[-*]\s+\[)([ xX])(\].*)$/
+  // `**Estado:**` line: prefix + value + trailing whitespace (includes \r on
+  // CRLF files — the trailing \r is part of group 3 and never rewritten).
+  const ESTADO_RE = /^(\s*\*\*Estado:\*\*\s*)(.*?)(\s*)$/
+
+  const isDoneRaw = (raw) => normalizeState(raw) === 'done'
+
+  /**
+   * Resolve the target section from an itemRef {id} and/or {line}.
+   * Strategy (duplicate-title safe):
+   *   - {line}: match by exact heading index; verify id when both fields are
+   *     present (a stale line after external edits falls back to id search).
+   *   - {id} alone: unique → OK; 0 matches → 'todo not found'; several →
+   *     'ambiguous todo match' (the caller should re-send the line).
+   */
+  function resolveSection(sections, { id, line }) {
+    if (Number.isInteger(line)) {
+      const byLine = sections.filter((s) => s.line === line)
+      if (byLine.length === 1 && (!id || sectionId(byLine[0]) === id)) return byLine[0]
+    }
+    if (typeof id === 'string' && id.trim()) {
+      const matches = sections.filter((s) => sectionId(s) === id)
+      if (matches.length === 1) return matches[0]
+      if (matches.length > 1) throw new Error('ambiguous todo match')
+    }
+    throw new Error('todo not found')
+  }
+
+  /** Pure: flipped done-marker diagnostics+replacement for ONE raw line. */
+  function flipMarker(rawLine) {
+    const cb = rawLine.match(CHECKBOX_RE)
+    if (cb) {
+      const from = cb[2]
+      const to = from === 'x' || from === 'X' ? ' ' : 'x'
+      return { mode: 'checkbox', from, to, next: `${cb[1]}${to}${cb[3]}` }
+    }
+    const st = rawLine.match(ESTADO_RE)
+    if (st) {
+      const from = st[2]
+      const to = isDoneRaw(from) ? 'todo' : 'done'
+      // A checkbox has two states: done-family collapses to `done`, any
+      // other state re-opens as `todo`. Only the value segment changes.
+      return { mode: 'estado', from: from.trim(), to, next: `${st[1]}${to}${st[3]}` }
+    }
+    return null
+  }
+
+  /**
+   * POST /todos/toggle — surgical write-back into the SSOT _PENDING.md.
+   * itemRef = {id} or {line} (or both — both is what the UI sends).
+   *
+   * Guarantees:
+   *   - fresh read every call (the file can change in Obsidian between
+   *     renders — no cache);
+   *   - EXACTLY the resolved item's state-marker line changes (checkbox
+   *     bracket preferred over Estado value); every other byte is preserved,
+   *     including \r\n endings;
+   *   - atomic write: `<file>.tmp` + fs.renameSync (a crash mid-write leaves
+   *     the original intact, never a half-flipped file);
+   *   - mismatch between render and reality → clean 'todo not found' /
+   *     'ambiguous todo match'; single documented retry of the read+match+
+   *     flip+write cycle on transient I/O failure.
+   *
+   * @returns {item, sources, toggled} on success; {status, error} otherwise
+   *   (mirrors getTodos' {status, error} convention consumed by the router).
+   */
+  async function toggleTodo(itemRef) {
+    const ref = itemRef == null ? {} : itemRef
+    const file = path.join(VAULT_ROOT, '_PENDING.md')
+    const MAX_ATTEMPTS = 2 // one flip + a single documented retry
+
+    let lastErr = null
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      // Fresh read every attempt — no cache, SSOT can change externally.
+      const raw = readFile(file)
+      if (raw === null) return { status: 404, error: 'no _PENDING.md' }
+
+      try {
+        const sections = parseSections(raw.replace(/\r\n/g, '\n'))
+        const target = resolveSection(sections, ref)
+
+        // Item span: from its heading line to the next heading (or EOF).
+        const nextLine = sections
+          .filter((s) => s.line > target.line)
+          .reduce((min, s) => Math.min(min, s.line), raw.split('\n').length)
+        const rawLines = raw.split('\n')
+
+        // One done-marker per item: checkbox wins over Estado.
+        let flip = null
+        let flipIndex = -1
+        for (let i = target.line; i < nextLine; i++) {
+          if (CHECKBOX_RE.test(rawLines[i])) { flip = flipMarker(rawLines[i]); flipIndex = i; break }
+        }
+        if (!flip) {
+          for (let i = target.line; i < nextLine; i++) {
+            if (ESTADO_RE.test(rawLines[i])) { flip = flipMarker(rawLines[i]); flipIndex = i; break }
+          }
+        }
+        if (!flip) throw new Error('todo not found') // no toggleable marker
+
+        rawLines[flipIndex] = flip.next
+
+        // Atomic write-back: temp file in the same dir + rename over original.
+        const tmp = `${file}.tmp`
+        try {
+          fs.writeFileSync(tmp, rawLines.join('\n'), 'utf-8')
+          fs.renameSync(tmp, file)
+        } catch (e) {
+          try { fs.rmSync(tmp, { force: true }) } catch { /* best effort cleanup */ }
+          throw e
+        }
+
+        // Refreshed item shape from the post-write parse (falls back to the
+        // pre-flip fields if the file changed concurrently during rename).
+        const after = readFile(file)
+        const refreshed = after !== null
+          ? parseSections(after.replace(/\r\n/g, '\n')).find((s) => s.line === target.line)
+          : null
+        const item = {
+          id: sectionId(target),
+          title: target.title,
+          state: flip.mode === 'checkbox'
+            ? normalizeState((refreshed ?? target).state)
+            : (refreshed ? normalizeState(refreshed.state) : flip.to),
+          priority: target.priority ? target.priority.replace(/\*\*/g, '') : 'Baja',
+          updated: target.updated || null,
+          line: target.line,
+        }
+
+        return { item, sources: withProvenance('_PENDING.md'), toggled: flip }
+      } catch (e) {
+        // Targeting errors are deterministic — no retry.
+        if (e.message === 'todo not found' || e.message === 'ambiguous todo match') {
+          return { status: 404, error: e.message }
+        }
+        lastErr = e
+        console.warn('[use-case:todos] toggle attempt failed:', e?.message)
+      }
+    }
+    return { status: 500, error: `Could not toggle todo: ${lastErr?.message || 'write failed'}` }
+  }
+
   // GET /todos/metrics — real-time vault metrics from logs
-  async function getMetrics() {
-    const sysPath = path.join(VAULT_ROOT, '08 - SYSTEM')
+  async function getMetrics() {    const sysPath = path.join(VAULT_ROOT, '08 - SYSTEM')
     const stateDir = path.join(sysPath, 'state')
 
     const readJson = (base, rel) => {
@@ -230,5 +400,5 @@ export function createTodosUseCases({ vault }) {
     }
   }
 
-  return { getTodos, getMetrics, getGraph }
+  return { getTodos, toggleTodo, getMetrics, getGraph }
 }

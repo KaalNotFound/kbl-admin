@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { fetchTodos, fetchTodosMetrics, fetchTodosGraph } from '../api'
-import type { TodosResponse, TodosMetrics, TodosGraph, TodoState } from '../types'
+import { fetchTodos, fetchTodosMetrics, fetchTodosGraph, toggleTodo } from '../api'
+import type { TodosResponse, TodosMetrics, TodosGraph, TodoState, TodoItem } from '../types'
 
 const STATE_COLORS: Record<TodoState, string> = {
   backlog: 'bg-surface text-text-secondary',
@@ -39,6 +39,13 @@ export default function TodosDashboard() {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [filter, setFilter] = useState<'all' | 'active' | 'done'>('all')
+  // Phase 4 write-back: one toggle in flight at a time; failures surface as
+  // an inline '!' on the row (button becomes the retry affordance). Strategy:
+  // INTEGRATE the server-returned refreshed item into local state (no full
+  // refetch here) — navigating away and back re-runs the mount fetch and
+  // re-syncs counts with the SSOT.
+  const [toggling, setToggling] = useState<string | null>(null)
+  const [toggleError, setToggleError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([fetchTodos(), fetchTodosMetrics(), fetchTodosGraph()])
@@ -49,6 +56,38 @@ export default function TodosDashboard() {
 
   if (loading) return <LoadingSkeleton />
   if (!todos) return <div className="card p-5 text-text-secondary">No se pudo cargar el TODO del vault</div>
+
+  // Visual done state: the parser models done via `state === 'done'` (no
+  // separate done/completed field) — that is the `item.done` equivalent.
+  const isDone = (t: TodoItem) => t.state === 'done'
+  const toggleKey = (t: TodoItem) => `${t.id}:${t.line ?? 0}`
+
+  const onToggle = async (t: TodoItem) => {
+    if (toggling) return
+    const key = toggleKey(t)
+    setToggling(key)
+    setToggleError(null)
+    try {
+      const res = await toggleTodo({ id: t.id, line: t.line })
+      if (!res.ok && res.error) {
+        console.warn('[todos] toggle failed:', res.error)
+        setToggleError(key)
+        return
+      }
+      // Integrate the returned (re-parsed) item — the SSOT file is the
+      // server-side truth and this row is now byte-aligned with it.
+      setTodos(prev => prev ? {
+        ...prev,
+        active: prev.active.map(it =>
+          it.id === res.item.id && (it.line ?? 0) === (res.item.line ?? 0) ? res.item : it),
+      } : prev)
+    } catch (e) {
+      console.warn('[todos] toggle request failed:', e)
+      setToggleError(key)
+    } finally {
+      setToggling(null)
+    }
+  }
 
   const c = todos.counts
   const inFlight = c['in-progress'] + c.review
@@ -218,27 +257,45 @@ export default function TodosDashboard() {
           {list.length === 0 ? (
             <p className="text-text-secondary text-sm py-3">Sin TODOs en esta vista</p>
           ) : (
-            list.map(t => (
-              <div key={t.id} className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg hover:bg-surface transition-colors">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATE_DOT[t.state]}`} />
-                  <div className="min-w-0">
-                    <p className="text-sm text-text-primary truncate">{t.title}</p>
-                    {t.updated && <p className="text-[0.65rem] text-text-tertiary">última actualización: {t.updated}</p>}
+            list.map(t => {
+              const key = toggleKey(t)
+              const done = isDone(t)
+              return (
+                <div key={key} className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg hover:bg-surface transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <button
+                      type="button"
+                      aria-label="Toggle todo"
+                      title={done ? 'Marcar como pendiente' : 'Marcar como hecho'}
+                      disabled={toggling !== null}
+                      onClick={() => onToggle(t)}
+                      className={`w-4 h-4 shrink-0 rounded border flex items-center justify-center text-[0.65rem] leading-none transition-colors ${
+                        done
+                          ? 'bg-success/15 border-success/50 text-success'
+                          : 'bg-surface border-border-light text-transparent hover:border-accent/50'
+                      } ${toggling ? 'opacity-60 cursor-wait' : 'cursor-pointer'}`}
+                    >
+                      {toggleError === key ? <span className="text-danger font-bold">!</span> : done ? '✓' : ''}
+                    </button>
+                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATE_DOT[t.state]}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm text-text-primary truncate">{t.title}</p>
+                      {t.updated && <p className="text-[0.65rem] text-text-tertiary">última actualización: {t.updated}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`px-2 py-0.5 rounded text-[0.65rem] font-semibold ${STATE_COLORS[t.state]}`}>
+                      {STATE_LABEL[t.state]}
+                    </span>
+                    {t.priority && (
+                      <span className={`text-xs ${t.priority.includes('Alta') || t.priority.includes('🔴') ? 'text-danger' : t.priority.includes('Media') ? 'text-warning' : 'text-text-tertiary'}`}>
+                        {t.priority}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`px-2 py-0.5 rounded text-[0.65rem] font-semibold ${STATE_COLORS[t.state]}`}>
-                    {STATE_LABEL[t.state]}
-                  </span>
-                  {t.priority && (
-                    <span className={`text-xs ${t.priority.includes('Alta') || t.priority.includes('🔴') ? 'text-danger' : t.priority.includes('Media') ? 'text-warning' : 'text-text-tertiary'}`}>
-                      {t.priority}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>

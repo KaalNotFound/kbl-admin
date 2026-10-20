@@ -3,6 +3,78 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-20 — Phase 4: todos write-back — toggling a task edits the SSOT surgically
+
+The TODO view was strictly read-only: the operator could SEE `_PENDING.md`
+rows on the dashboard but the only way to close one was to edit the file by
+hand in Obsidian. Phase 4 closes the loop (TDD strict: 11 RED tests collapsing
+to 13 after fixes before any implementation, suite 133 → 146/146, vite build
+OK): a toggle from the dashboard writes back ONE state-marker edit into
+`_PENDING.md`, keeping the markdown byte-surgical and the SSOT rule intact —
+any external reader (Obsidian itself, CLI mirrors like the removed
+`todo-crud.mjs`) keeps seeing the same file.
+
+**`server/application/use-cases/vault-todos.js` (extended):**
+
+- Additive parse change: each section item now carries `line` — the 0-based
+  index of its `##` heading inside the file. Rationale: duplicate titles
+  exist, so line-based targeting beats content matching; CRLF normalization
+  never changes the line count, so indices map 1:1 onto the raw bytes.
+  `getTodos` exposes it; existing consumers are untouched.
+- NEW `toggleTodo(itemRef)` — itemRef `{id}` and/or `{line}` (the UI sends
+  both). Fresh read every call (no cache: Obsidian can change the file
+  between renders). Resolution: exact `line` match first, verified against
+  `id` when present; a stale line falls back to id search; id-only with 0
+  matches → `'todo not found'`, with several → `'ambiguous todo match'`
+  (both surface as 404-style `{"error"}`).
+- IMPORTANT FORMAT REALITY (deviation from the checkbox-only plan):
+  `_PENDING.md` in this vault is SECTION-based (`## Title` + `**Estado:**`,
+  with some sections ALSO carrying an Obsidian-native `- [ ]`/`- [x]` line).
+  So exactly one done-marker per item is flipped, preferring the checkbox:
+  1. checkbox line inside the item's span → ONLY the bracket chars change
+     (`[ ]` ↔ `[x]`), prose/priority/tags/lines untouched;
+  2. otherwise the `**Estado:**` line → ONLY the value segment changes
+     (done-family ↔ `todo`; a two-state checkbox semantic over the Estado
+     field), prefix and trailing whitespace (including `\r`) preserved.
+  A toggle from `in-progress` lands as `done`; re-toggling reopens as
+  `todo` (the previous intermediate state is intentionally not restored —
+  a checkbox has two states).
+- Atomicity: the new content is written to `_PENDING.md.tmp` in the same
+  directory and `fs.renameSync` replaces the original — a crash mid-write
+  can never leave a half-flipped file; the tmp file is cleaned up on
+  failure. One documented retry of the read+match+flip+write cycle on
+  transient I/O errors (targeting errors are deterministic and return
+  immediately).
+
+**`server/routes/todos.mjs`:** `POST /api/todos/toggle` — body `{id, line}`;
+400 on a body without id/line (mirroring the capture route's validation
+guard style), 404 for not-found/ambiguous/missing `_PENDING.md` (the file
+is never re-created by a toggle), 200 `{ok, item, sources, toggled}` on
+success — `sources` carries the provenance `{file, obsidian_url}` shape.
+**GET response shapes unchanged** (only the additive `line` field).
+
+**`src/api/vault.ts` + `src/types.ts` + `src/components/TodosDashboard.tsx`:**
+`toggleTodo({id, line})` typed; `TodoItem` gains optional `line`;
+`TodoToggleResponse` typed. UI strategy chosen on purpose: INTEGRATE the
+server-returned item into local state (no full refetch per toggle) — the
+row is already byte-aligned with the SSOT after the server re-parses, and
+navigating away/back re-runs the mount fetch so counts re-sync. Visual
+state maps `state === 'done'` (the parser has no separate done/completed
+field). Each row grew a checkbox-style toggle button (`aria-label "Toggle
+todo"`), disabled while in-flight; failures show an inline `!` (console
+warning, no toast infra) and the button itself is the retry affordance.
+The phase-1 "Open _PENDING.md ↗" chip is untouched.
+
+**Tests (`server/__tests__/todos-writeback.test.js`, 13):** temp vault
+provenance harness + real app via supertest. Pins: parser `line` (4/12
+headings); Estado toggle changes EXACTLY one line in bytes (line-array
+diff `[6]`), GET reflects it live, toggle-back symmetric; checkbox toggle
+diff `[18]` with `[x]` ↔ `[ ]` and the duplicate-title section
+byte-identical; already-done item reopens; id-only on duplicate titles →
+404 `ambiguous todo match` with the file untouched; `{id, line}` flips
+each side exactly once; unknown id → 404; empty body → 400; missing
+`_PENDING.md` → clean 404 without re-creating it; no `.tmp` leftovers.
+
 ## 2026-10-20 — Phase 3: capture triage — the CAPTURE flow writes to the CORRECT vault location, structured fields
 
 `POST /api/capture` HARDCODED one destination

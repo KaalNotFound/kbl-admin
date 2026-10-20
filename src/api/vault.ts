@@ -12,6 +12,7 @@ import type {
   TodosResponse,
   TodosMetrics,
   TodosGraph,
+  TodoToggleResponse,
 } from '../types'
 
 export function fetchOverview(): Promise<Overview> {
@@ -95,4 +96,16 @@ export function fetchTodosMetrics(): Promise<TodosMetrics> {
 
 export function fetchTodosGraph(): Promise<TodosGraph> {
   return fetchJSON<TodosGraph>(`/api/todos/graph`)
+}
+
+// Phase 4 write-back: flips a task's done marker inside the SSOT
+// `_PENDING.md`. The server re-reads the file fresh; `line` (0-based, from
+// the item shape) disambiguates duplicate titles, so send id + line. The
+// caller integrates the returned refreshed item into local state.
+export function toggleTodo(ref: { id: string; line?: number }): Promise<TodoToggleResponse> {
+  return fetch(`/api/todos/toggle`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(ref),
+  }).then(r => r.json())
 }
