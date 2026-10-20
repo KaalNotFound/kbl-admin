@@ -25,6 +25,7 @@ import masteryRouter from './mastery.mjs';
 import behavioralRouter from './behavioral.mjs';
 import todosRouter from './todos.mjs';
 import globalSearchRouter from './global-search.mjs';
+import vaultDoctorRouter from './vault-doctor.mjs';
 
 // Note: finanzasRouter is in server/_finanzas.mjs (not in routes/)
 import finanzasRouter from '../_finanzas.mjs';
@@ -50,4 +51,5 @@ export const apiRouters = [
   behavioralRouter,
   todosRouter,
   globalSearchRouter,
+  vaultDoctorRouter,
 ];

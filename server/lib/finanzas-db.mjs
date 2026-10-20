@@ -429,6 +429,7 @@ export {
   parsePrecio,
   parseCantidad,
   cleanDate,
+  normalizeNumber,
   getInitDiagnostics,
   parseComprasFile,
   parseFoodSoraFile,

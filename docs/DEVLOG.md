@@ -3,6 +3,72 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-20 — Phase 5: Vault Doctor — validating the vault the tolerant parser silently swallows
+
+The reformalization audit's verdict on the finanzas layer was "robust against
+absence, fragile against garbage": freshly cloned vaults loaded clean and any
+malformed file degraded only its own source (phases 0–2 hardening), but the
+tolerance itself is blind — a dropped row, a silently forced quantity or a
+rounded-to-zero price never tells the operator WHICH file broke or WHY.
+Phase 5 closes the whole reformalization plan (phases 0–5) with per-phase
+hardening PLUS self-service diagnostics, answered by Vault Doctor (TDD strict:
+21 RED tests → 21/21 GREEN after implementation, suite 146 → 167/167, vite
+build OK).
+
+**`server/lib/vault-doctor.mjs` (NEW) — `scanVault({vaultRoot, obsidianUrl?})`:**
+a pure-ish, cache-free schema lint that re-reads the four finans zones fresh
+(Compras, Patrimonio, Daily/food_sora, pau-agent `_wallet.json` — the zone
+segments deliberately mirror the loader constants; both `finanzas-db.mjs` and
+`finanzas-watcher.mjs` already carry keep-in-sync comments, now three places).
+Only FILES IN EXPECTED ZONES are linted — unknown files stay invisible, same
+trust boundary as the loaders. Rules mirror exactly what each loader would
+swallow: missing/empty `producto::` → `missing_field` (error, with 1-based
+line — the parser yields zero rows and the note does nothing); date without
+plausible `YYYY-MM-DD` → `bad_date` (warn — cleanDate persists ANY raw string,
+so `2026-10-99` is caught too via a shape + calendar-plausibility check);
+price parsing to 0 while a `producto` exists → `suspicious_price` (warn,
+message calls out the European comma tolerance `'0,40'` hits — the loader's
+normalizeNumber rounds it to 0 and the row still inserts); non-numeric
+`cantidad` → `bad_quantity` (warn — the loader silently forces qty 1, so the
+exported `normalizeNumber` from `finanzas-db.mjs` is the discriminator,
+ADDITIVE only); assets: missing `tipo`/`nombre` → `missing_field` (error —
+parseAssetsFile returns null), `valor` 0 → `suspicious_value` (warn);
+Daily: only Daily-looking files (dated name OR `_food_sora::` marker) count as
+scanned, slot values not `H:MM`/`HH:MM` → `bad_slot_format` (warn with the
+field name), duplicate date-from-filename across files → `duplicate_day`
+(warn per extra file — INSERT OR REPLACE keeps only the last read); wallet:
+broken JSON → `unreadable_file` (error), non-list `entries` or an entry
+without concept/finite amount → `bad_entry` (error, one per bad entry,
+mirroring loadWallet's acceptance criteria). Never throws: total scan failure
+degrades to a zeroed scan + diagnostics, line numbers are 1-based, and every
+finding carries `obsidian_url` (Phase 1 helper, injectable) for the
+provenance deep-link.
+
+**`server/routes/vault-doctor.mjs` (NEW, registered in the routes barrel):**
+thin router, `GET /api/vault-doctor` → `200 {ok:true, scanned, findings,
+diagnostics}`. `await ensureDb()` populates the runtime per-source status
+(DB loader + chokidar watcher, `getInitDiagnostics()`) so the page shows WHAT
+tolerance currently absorbed AND what the runtime believes. Cost tradeoff,
+documented in the route: the scan runs PER REQUEST on fresh file reads —
+the vault is the SSOT (same contract as `/api/todos` toggles); O(files in
+the four zones) is fine for an audit page.
+
+**`server/lib/finanzas-db.mjs`** — single additive export: `normalizeNumber`
+(was module-private) so the lint discriminates non-numeric values with the
+SAME normalization the loader applies; no behavior change.
+
+**`src/types.ts` + `src/api/vault.ts` + `src/components/VaultDoctorDashboard.tsx`
+(NEW) + nav wiring:** `VaultDoctorResponse`/`VaultDoctorFinding` types
+(`line` is 1-based here, unlike TodoItem's 0-based heading index — documented
+in the type), `fetchVaultDoctor()` in the existing vault domain barrel, and a
+new screen: summary header (archivos auditados per zone), findings grouped by
+file with the Food Sora filled-dot severity language (red/amber/green), the
+"Open in Obsidian ↗" provenance chip per file row, runtime sources panel, the
+tolerance note surfaced verbatim, Spanish empty state ("Todos los archivos
+del vault pasan la validación") and skeleton while scanning. Tab `doctor`
+registered exactly like its siblings: `useAppStore` union, Sidebar 🩺 entry
+under Referencia, `page-meta` title/desc, App.tsx screen switch.
+
 ## 2026-10-20 — Phase 4: todos write-back — toggling a task edits the SSOT surgically
 
 The TODO view was strictly read-only: the operator could SEE `_PENDING.md`

@@ -797,3 +797,49 @@ export interface TodosGraph {
   broken_count: number | null
   timestamp: string
 }
+
+// --- Phase 5: Vault Doctor (schema lint per directory + runtime diagnostics) ---
+
+export type VaultDoctorSeverity = 'error' | 'warn'
+
+export type VaultDoctorKind =
+  | 'missing_field'
+  | 'bad_date'
+  | 'suspicious_price'
+  | 'bad_quantity'
+  | 'bad_slot_format'
+  | 'suspicious_value'
+  | 'bad_entry'
+  | 'unreadable_file'
+  | 'duplicate_day'
+
+/**
+ * One finding the tolerant parser would silently skip. `file` is a
+ * vault-relative path ('/'-separated); `obsidian_url` is the Phase 1
+ * deep-link (`obsidian://open?path=<absolute fs path>`).
+ * NOTE: `line` here is 1-based (human/editor line), unlike TodoItem's
+ * 0-based heading index.
+ */
+export interface VaultDoctorFinding {
+  file: string
+  line?: number
+  kind: VaultDoctorKind
+  severity: VaultDoctorSeverity
+  field?: string
+  value?: string
+  message: string
+  obsidian_url?: string
+}
+
+export interface VaultDoctorResponse {
+  ok: boolean
+  /** Files linted per zone (only files in expected zones are counted). */
+  scanned: { compras: number; food_sora: number; assets: number; wallet: number }
+  findings: VaultDoctorFinding[]
+  /** Runtime per-source status from the DB loader + watcher (getInitDiagnostics). */
+  diagnostics: {
+    initialized: boolean
+    initFailed: boolean
+    sources: Record<string, string>
+  }
+}

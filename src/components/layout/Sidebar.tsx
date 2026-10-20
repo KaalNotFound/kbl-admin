@@ -6,6 +6,7 @@ type Tab =
   | 'study' | 'market' | 'finanzas' | 'behavioral'
   | 'todos'
   | 'algorithms'
+  | 'doctor'
 
 interface TabDef {
   id: Tab
@@ -31,6 +32,7 @@ const tabs: TabDef[] = [
   { id: 'logs',         label: 'Registros',        icon: '☰', group: 'Sistema' },
   { id: 'brave',        label: 'Navegador',        icon: '🌐', group: 'Referencia' },
   { id: 'whatsapp',     label: 'Conversaciones',   icon: '💬', group: 'Referencia' },
+  { id: 'doctor',       label: 'Vault Doctor',     icon: '🩺', group: 'Referencia' },
 ]
 
 const groups = ['Visión', 'Módulos', 'Flujo', 'Referencia', 'Sistema'] as const

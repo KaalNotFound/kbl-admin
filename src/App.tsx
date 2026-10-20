@@ -15,6 +15,7 @@ import BehavioralDashboard from './components/BehavioralDashboard'
 import MarketDashboard from './components/MarketDashboard'
 import FinanzasWrapper from './components/FinanzasWrapper'
 import TodosDashboard from './components/TodosDashboard'
+import VaultDoctorDashboard from './components/VaultDoctorDashboard'
 import Sidebar from './components/layout/Sidebar'
 import TopBar from './components/layout/TopBar'
 import PageHeader from './components/layout/PageHeader'
@@ -50,6 +51,7 @@ export default function App() {
             {tab === 'behavioral' && <BehavioralDashboard />}
             {tab === 'market' && <MarketDashboard />}
             {tab === 'finanzas' && <FinanzasWrapper />}
+            {tab === 'doctor' && <VaultDoctorDashboard />}
           </div>
         </div>
       </main>

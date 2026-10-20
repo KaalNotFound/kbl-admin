@@ -6,6 +6,7 @@ type Tab =
   | 'study' | 'market' | 'finanzas' | 'behavioral'
   | 'todos'
   | 'algorithms'
+  | 'doctor'
 
 type FocusMode = 'full' | 'focused' | 'immersive'
 

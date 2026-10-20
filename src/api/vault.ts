@@ -13,6 +13,7 @@ import type {
   TodosMetrics,
   TodosGraph,
   TodoToggleResponse,
+  VaultDoctorResponse,
 } from '../types'
 
 export function fetchOverview(): Promise<Overview> {
@@ -108,4 +109,11 @@ export function toggleTodo(ref: { id: string; line?: number }): Promise<TodoTogg
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(ref),
   }).then(r => r.json())
+}
+
+// Phase 5 Vault Doctor: per-request schema lint of the four finans zones
+// plus the runtime per-source diagnostics. The server reads files FRESH on
+// every call (vault is the SSOT) — no client caching layer assumed.
+export function fetchVaultDoctor(): Promise<VaultDoctorResponse> {
+  return fetchJSON<VaultDoctorResponse>(`/api/vault-doctor`)
 }
