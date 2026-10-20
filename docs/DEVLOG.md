@@ -3,6 +3,47 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-20 — Phase 1: data provenance + `obsidian://` deep links
+
+Every vault-sourced row now exposes where it came from, one click away
+from the raw note (TDD strict: 9 RED tests before any implementation,
+suite 99 → 108/108, vite build OK).
+
+**Backend:**
+
+- New `server/lib/obsidian-url.mjs`: single helper building
+  `obsidian://open?path=<encoded absolute path>` (per the official
+  Obsidian URI — the `path` param makes Obsidian itself resolve which
+  vault contains the file, no vault-name config needed).
+- `finanzas-db.mjs`: `assets` and `food_sora` schemas gained an
+  `archivo` column; all three loaders (compras/assets/food_sora) now
+  store vault-relative, `/`-normalized paths instead of bare filenames
+  (items already did, but relative-only).
+- Provenance added on the wire without breaking shapes: `/api/search`
+  and `/api/compare` rows carry `archivo` + `obsidian_url`;
+  `/api/patrimonio` rows too; `/api/food-sora` data rows point at the
+  Daily note (stats aggregate stays clean); `/api/todos` and
+  `/api/context` responses carry `sources: [{file, obsidian_url}]` for
+  `_PENDING.md` / `_PENDIENTES.md` / `_ROADMAP.md`.
+- `obsidianUrl` is injected through the DI container/vaultFsApi — the
+  use-cases layer stays free of lib imports (ADR boundary preserved).
+
+**Frontend:**
+
+- `src/lib/obsidian.ts`: `openObsidian()` + anchor-attrs helper
+  (`target="_blank" rel="noopener noreferrer"`).
+- Provenance chips, wired to existing UI style language: ↗ next to
+  Compras product rows, ↗ next to Patrimonio asset rows (the rows live
+  in `PatrimonioDashboard.tsx`, not `FinanzasDashboard.tsx` — deviation
+  verified against the actual render tree), "Open _PENDING.md ↗" in the
+  TODO header, "Edit in Obsidian ↗" chips for `_PENDIENTES.md` /
+  `_ROADMAP.md` in Session Context.
+
+**Verification:** temp-vault HTTP contract tests (search/compare/
+patrimonio/food-sora/todos/context), URL-shape unit tests, full suite
+108/108, live curl checks (URL percent-encoding confirmed faithful, e.g.
+`obsidian://open?path=%2Fhome%2F...%2FCompras%2F2026-10-16_carrefour.md`).
+
 ## 2026-10-20 — Phase 0: finanzas survives malformed vault data (per-source isolation)
 
 **Context:** the data-provenance audit verdict was "robust against

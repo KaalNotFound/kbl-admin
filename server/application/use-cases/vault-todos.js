@@ -74,10 +74,17 @@ function parseSections(content) {
 
 /**
  * createTodosUseCases — factory del dominio TODOS/Vault Metrics.
- * @param {{ VAULT_ROOT: string, readFile: Function, scanAreaRecursive: Function }} vault
+ * @param {{ VAULT_ROOT: string, readFile: Function, scanAreaRecursive: Function, obsidianUrl?: Function }} vault
  */
 export function createTodosUseCases({ vault }) {
-  const { VAULT_ROOT, readFile, scanAreaRecursive } = vault
+  const { VAULT_ROOT, readFile, scanAreaRecursive, obsidianUrl } = vault
+
+  // Data provenance (Phase 1): exposed SSOT files as {file, obsidian_url}.
+  // obsidianUrl is injected via the vault adapter API (no direct lib/ import
+  // in the use-case layer); absent in older wirings → sources degrade to [].
+  const withProvenance = (vaultRelativePath) => obsidianUrl
+    ? [{ file: vaultRelativePath, obsidian_url: obsidianUrl(vaultRelativePath) }]
+    : []
 
   async function readPending() {
     const file = path.join(VAULT_ROOT, '_PENDING.md')
@@ -116,6 +123,7 @@ export function createTodosUseCases({ vault }) {
         done: countBy(['done']),
         cancelled: countBy(['cancelled']),
       },
+      sources: withProvenance('_PENDING.md'),
       timestamp: new Date().toISOString(),
     }
   }

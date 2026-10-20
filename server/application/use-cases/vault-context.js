@@ -10,6 +10,13 @@ import path from 'path';
 export function createContextUseCases({ vault }) {
   const systemDir = () => path.join(vault.VAULT_ROOT, '08 - SYSTEM');
 
+  // Data provenance (Phase 1): exposed SSOT files as [{file, obsidian_url}].
+  // obsidianUrl is injected via the vault adapter API (no direct lib/ import
+  // in the use-case layer); absent in older wirings → provenance is skipped.
+  const provenanceList = (relPaths) => vault.obsidianUrl
+    ? relPaths.map((file) => ({ file, obsidian_url: vault.obsidianUrl(file) }))
+    : [];
+
   async function getLogs() {
     const sessionLog = path.join(vault.VAULT_ROOT, '08 - SYSTEM', 'state', 'session-log.json');
     let sessions = [];
@@ -48,8 +55,12 @@ export function createContextUseCases({ vault }) {
   }
 
   async function getContext() {
-    // Parse _PENDIENTES.md
+    // Data provenance: the two SSOT files that back this payload (only the ones that exist)
+    const contextSources = [];
     const pendientesPath = path.join(vault.VAULT_ROOT, '_PENDIENTES.md');
+    if (vault.existsSync(pendientesPath)) contextSources.push('_PENDIENTES.md');
+
+    // Parse _PENDIENTES.md
     let pendientes = [];
     if (vault.existsSync(pendientesPath)) {
       const raw = vault.readFile(pendientesPath);
@@ -75,6 +86,7 @@ export function createContextUseCases({ vault }) {
 
     // Parse _ROADMAP.md
     const roadmapPath = path.join(vault.VAULT_ROOT, '_ROADMAP.md');
+    if (vault.existsSync(roadmapPath)) contextSources.push('_ROADMAP.md');
     let roadmap = { current: null, pending: [], completed: [] };
     if (vault.existsSync(roadmapPath)) {
       const raw = vault.readFile(roadmapPath);
@@ -109,7 +121,7 @@ export function createContextUseCases({ vault }) {
       return { date, file: f.name, summary, lines };
     });
 
-    return { pendientes, roadmap, checkpoints };
+    return { pendientes, roadmap, checkpoints, sources: provenanceList(contextSources) };
   }
 
   return { getLogs, getContext };

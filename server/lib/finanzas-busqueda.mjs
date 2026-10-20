@@ -2,6 +2,10 @@
 // (Split ADR-024)
 import { query } from './finanzas-db.mjs'
 import { getAliasIndex, loadMercadoDb } from './finanzas-core.mjs'
+import { obsidianUrl } from './obsidian-url.mjs'
+
+// Data provenance helper (Phase 1): vault-relative archivo → obsidian_url
+const withProvenance = (archivo) => archivo ? obsidianUrl(archivo) : null
 
 // --- Search ---
 
@@ -26,7 +30,7 @@ export function searchItems(q, store) {
   }
   const mercadoDb = loadMercadoDb()
   const results = rows.map(r => {
-    const histRows = query(`SELECT fecha, precio_total FROM items WHERE producto = ? AND fecha < ? ORDER BY fecha DESC LIMIT 3`, [r[2], r[0]])
+    const histRows = query(`SELECT fecha, precio_total FROM items WHERE producto = ? AND fecha < ? ORDER BY fecha DESC LIMIT 3`,     [r[2], r[0]])
     const prodMercado = mercadoDb?.productos?.[r[2]]
     const mercadoPrices = {}
     if (prodMercado && mercadoDb) {
@@ -34,7 +38,7 @@ export function searchItems(q, store) {
         if (s !== 'desconocido') mercadoPrices[s] = prodMercado.precios[s] || null
       }
     }
-    return { fecha: r[0], comercio: r[1], producto: r[2], cantidad: r[3], precio_total: r[4], categoria: r[5], archivo: r[6], historial: histRows.map(h => ({ fecha: h[0], precio: h[1] })), precios_mercado: Object.keys(mercadoPrices).length > 0 ? mercadoPrices : null }
+    return { fecha: r[0], comercio: r[1], producto: r[2], cantidad: r[3], precio_total: r[4], categoria: r[5], archivo: r[6], obsidian_url: withProvenance(r[6]), historial: histRows.map(h => ({ fecha: h[0], precio: h[1] })), precios_mercado: Object.keys(mercadoPrices).length > 0 ? mercadoPrices : null }
   })
   const storeRows = query(`SELECT DISTINCT comercio FROM items WHERE comercio != '' ORDER BY comercio`, [])
   const stores = storeRows.map(r => r[0])
@@ -45,7 +49,7 @@ export function searchItems(q, store) {
 
 export function compareItems(q) {
   const aliasIdx = getAliasIndex()
-  let sql = `SELECT producto, precio_total, comercio, fecha, categoria FROM items WHERE LOWER(producto) LIKE ? ORDER BY producto, fecha DESC`
+  let sql = `SELECT producto, precio_total, comercio, fecha, categoria, archivo FROM items WHERE LOWER(producto) LIKE ? ORDER BY producto, fecha DESC`
   let params = [`%${q}%`]
   let rows = query(sql, params)
   if (!rows.length && aliasIdx) {
@@ -58,7 +62,7 @@ export function compareItems(q) {
   for (const r of rows) {
     storeSet.add(r[2])
     if (!productMap[r[0]]) productMap[r[0]] = []
-    if (productMap[r[0]].length < 5) productMap[r[0]].push({ comercio: r[2], precio: r[1], fecha: r[3], categoria: r[4] })
+    if (productMap[r[0]].length < 5) productMap[r[0]].push({ comercio: r[2], precio: r[1], fecha: r[3], categoria: r[4], archivo: r[5], obsidian_url: withProvenance(r[5]) })
   }
   const mercadoDb = loadMercadoDb()
   const comparison = Object.entries(productMap).map(([producto, precios]) => {

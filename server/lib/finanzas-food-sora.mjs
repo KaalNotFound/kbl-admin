@@ -1,6 +1,7 @@
 // finanzas-food-sora.mjs — Estadísticas y datos del registro food_sora (5 slots diarios)
 // (Split ADR-024)
 import { query } from './finanzas-db.mjs'
+import { obsidianUrl } from './obsidian-url.mjs'
 
 // --- Food Sora ---
 
@@ -37,6 +38,8 @@ export function getFoodSoraStats() {
 }
 
 export function getFoodSoraData() {
-  const rows = query(`SELECT fecha, madrugada, manana, mediodia, tarde, noche FROM food_sora ORDER BY fecha`, [])
-  return rows.map(r => ({ fecha: r[0], slots: { Madrugada: r[1], Mañana: r[2], Mediodía: r[3], Tarde: r[4], Noche: r[5] }, filled_slots: [r[1], r[2], r[3], r[4], r[5]].filter(v => v && v !== '').length, total_slots: 5 }))
+  // Data provenance (Phase 1): every daily note maps 1:1 to one food row,
+  // so we expose archivo + obsidian_url on the DATA route only (stats stays aggregate).
+  const rows = query(`SELECT fecha, madrugada, manana, mediodia, tarde, noche, archivo FROM food_sora ORDER BY fecha`, [])
+  return rows.map(r => ({ fecha: r[0], slots: { Madrugada: r[1], Mañana: r[2], Mediodía: r[3], Tarde: r[4], Noche: r[5] }, filled_slots: [r[1], r[2], r[3], r[4], r[5]].filter(v => v && v !== '').length, total_slots: 5, archivo: r[6], obsidian_url: r[6] ? obsidianUrl(r[6]) : null }))
 }

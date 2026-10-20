@@ -62,7 +62,18 @@ export default function PatrimonioDashboard() {
               {data.assets.map((a, i) => (
                 <div key={i} className="flex justify-between items-center py-[0.4rem] text-sm border-b border-[rgba(232,184,75,0.04)] last:border-b-0">
                   <div>
-                    <span className="text-[#f0e5d8] font-medium">{a.nombre}</span>
+                    <span className="inline-flex items-center gap-2">
+                      <span className="text-[#f0e5d8] font-medium">{a.nombre}</span>
+                      {a.obsidian_url && (
+                        <a
+                          href={a.obsidian_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Open source note in Obsidian"
+                          className="inline-flex items-center text-[0.65rem] text-[#a0907e] border border-[rgba(232,184,75,0.15)] rounded-[4px] px-[0.3rem] py-[0.05rem] hover:text-kbl-blue hover:border-[rgba(232,184,75,0.35)] hover:bg-[rgba(232,184,75,0.06)] transition-colors"
+                        >↗</a>
+                      )}
+                    </span>
                     <span className="block text-[0.6rem] text-[#a0907e] uppercase">{a.tipo}</span>
                   </div>
                   <div className="text-right">

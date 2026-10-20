@@ -109,6 +109,11 @@ export interface SeenResponse {
 }
 
 // --- Finanzas Personales (integrado en KBL_Admin) ---
+// Data provenance (Phase 1): vault-sourced rows expose their source note.
+export interface SourceFile {
+  file: string
+  obsidian_url: string
+}
 export interface SearchResults {
   results: Array<{
     fecha: string
@@ -116,6 +121,8 @@ export interface SearchResults {
     producto: string
     precio_total: number
     historial: Array<{ precio: number; fecha: string }>
+    archivo?: string
+    obsidian_url?: string | null
   }>
   stores: string[]
 }
@@ -186,7 +193,7 @@ export interface FinanzasData {
 }
 export interface CompareItem {
   producto: string; categoria?: string
-  precios: { comercio: string; precio: number; fecha: string }[]
+  precios: { comercio: string; precio: number; fecha: string; archivo?: string; obsidian_url?: string | null }[]
   precios_mercado: PreciosMercado | null; min_price: number; avg_price: number
 }
 export interface CompareSummary {
@@ -207,9 +214,13 @@ export interface FoodSoraStats {
 }
 export interface FoodSoraDay {
   fecha: string; slots: Record<string, string>; filled_slots: number; total_slots: number
+  archivo?: string
+  obsidian_url?: string | null
 }
 export interface Asset {
   tipo: string; nombre: string; valor: number; ingreso_generado: number; fecha: string
+  archivo?: string
+  obsidian_url?: string | null
 }
 export interface AssetAlloc {
   tipo: string; total: number; pct: number
@@ -347,6 +358,7 @@ export interface SessionContextData {
   pendientes: PendienteItem[]
   roadmap: RoadmapData
   checkpoints: CheckpointItem[]
+  sources?: SourceFile[]
 }
 
 // --- Pomodoro Timer ---
@@ -747,6 +759,7 @@ export interface TodosResponse {
   total: number
   active: TodoItem[]
   counts: Record<TodoState, number>
+  sources?: SourceFile[]
   timestamp: string
 }
 

@@ -41,3 +41,6 @@ FEEDBACK.md
 
 # Lock file (optional — uncomment if you prefer no lock)
 # package-lock.json
+
+# Root-level runtime outbox (same class as server/data/)
+data/

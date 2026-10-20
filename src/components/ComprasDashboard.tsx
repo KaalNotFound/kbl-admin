@@ -336,7 +336,20 @@ export default function ComprasDashboard({ month }: { month: string }) {
                   <tr key={i} className="even:bg-[rgba(240,229,216,0.03)] hover:bg-[rgba(232,184,75,0.03)]">
                     <td className="px-3 py-2 border-b border-[rgba(232,184,75,0.04)] text-[#f0e5d8]"><span className="text-[0.75rem] text-[#a0907e] whitespace-nowrap">{item.fecha}</span></td>
                     <td className="px-3 py-2 border-b border-[rgba(232,184,75,0.04)] text-[#f0e5d8]"><span className="inline-block px-[0.5rem] py-[0.15rem] rounded-[4px] text-[0.7rem] font-medium bg-[rgba(232,184,75,0.08)] text-kbl-blue">{item.comercio}</span></td>
-                    <td className="px-3 py-2 border-b border-[rgba(232,184,75,0.04)] text-[#f0e5d8] font-medium">{item.producto}</td>
+                    <td className="px-3 py-2 border-b border-[rgba(232,184,75,0.04)] text-[#f0e5d8] font-medium">
+                      <span className="inline-flex items-center gap-2">
+                        {item.producto}
+                        {item.obsidian_url && (
+                          <a
+                            href={item.obsidian_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open source note in Obsidian"
+                            className="inline-flex items-center text-[0.65rem] text-[#a0907e] border border-[rgba(232,184,75,0.15)] rounded-[4px] px-[0.3rem] py-[0.05rem] hover:text-kbl-blue hover:border-[rgba(232,184,75,0.35)] hover:bg-[rgba(232,184,75,0.06)] transition-colors"
+                          >↗</a>
+                        )}
+                      </span>
+                    </td>
                     <td className="px-3 py-2 border-b border-[rgba(232,184,75,0.04)] text-[#f0e5d8]"><span className="font-semibold text-kbl-blue [font-variant-numeric:tabular-nums]">${item.precio_total}</span></td>
                     <td className="px-3 py-2 border-b border-[rgba(232,184,75,0.04)] text-[#f0e5d8]">
                       {item.historial.length > 0 ? (

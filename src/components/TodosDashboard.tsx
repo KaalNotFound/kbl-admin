@@ -71,7 +71,18 @@ export default function TodosDashboard() {
       {/* Summary Cards — TODO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card p-5">
-          <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">TODOs totales</h3>
+          <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+            TODOs totales
+            {todos.sources?.[0] && (
+              <a
+                href={todos.sources[0].obsidian_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open source note in Obsidian"
+                className="float-right -mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full border border-border-light text-text-secondary text-[0.6rem] normal-case tracking-normal font-medium hover:border-accent/40 hover:text-accent transition-colors"
+              >Open _PENDING.md ↗</a>
+            )}
+          </h3>
           <p className="text-3xl font-bold text-text-primary mt-1">{todos.total}</p>
           <p className="text-[0.7rem] text-text-tertiary mt-1">SSOT _PENDING.md</p>
         </div>

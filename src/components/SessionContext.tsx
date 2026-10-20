@@ -52,6 +52,21 @@ function CheckpointCard({ cp }: { cp: { date: string; file: string; summary: str
 
 const STATUS_ORDER = ['Alta', 'Media', 'Baja']
 
+/** Data provenance chip: opens the SSOT source note in Obsidian. */
+function SourceChip({ url, label }: { url: string; label: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Open source note in Obsidian"
+      className="inline-flex items-center text-[0.65rem] px-2 py-0.5 rounded-full border border-border-light text-text-secondary hover:border-accent/40 hover:text-accent transition-colors"
+    >
+      {label} ↗
+    </a>
+  )
+}
+
 export default function SessionContext() {
   const [data, setData] = useState<SessionContextData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -112,7 +127,11 @@ export default function SessionContext() {
           <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
             <span>📋</span> Pendientes ({pendientes.length})
           </h2>
-          <div className="flex gap-1.5">
+          <div className="flex items-center gap-2">
+            {data.sources?.find(s => s.file === '_PENDIENTES.md') && (
+              <SourceChip url={data.sources.find(s => s.file === '_PENDIENTES.md')!.obsidian_url} label="Edit in Obsidian" />
+            )}
+            <div className="flex gap-1.5">
             {['all', ...STATUS_ORDER].map(p => (
               <button
                 key={p}
@@ -126,6 +145,7 @@ export default function SessionContext() {
                 {p === 'all' ? 'Todas' : p}
               </button>
             ))}
+            </div>
           </div>
         </div>
 
@@ -158,9 +178,14 @@ export default function SessionContext() {
 
       {/* Roadmap Section */}
       <section>
-        <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <span>🗺️</span> Roadmap
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+            <span>🗺️</span> Roadmap
+          </h2>
+          {data.sources?.find(s => s.file === '_ROADMAP.md') && (
+            <SourceChip url={data.sources.find(s => s.file === '_ROADMAP.md')!.obsidian_url} label="Edit in Obsidian" />
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Current */}
           <div className="bg-card border border-accent/20 rounded-lg p-4">

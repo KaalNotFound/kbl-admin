@@ -10,6 +10,13 @@ const DAILY_DIR = path.join(VAULT_ROOT, '05 - JOURNAL', 'Daily')
 const PATRIMONIO_DIR = path.join(VAULT_ROOT, '02 - AREAS', '008 - Trazabilidad Compras', 'Patrimonio')
 const WALLET_PATH = path.join(VAULT_ROOT, '01 - PROYECTOS', 'AlToquePanama-Pau', 'pau-agent', '_wallet.json')
 
+// Vault-relative provenance path for a file inside a source dir (Phase 1):
+// "02 - AREAS/008 - Trazabilidad Compras/Compras/2026-10-15_mercadona.md".
+// Forced to '/' so the value is stable across OS + directly joinable to
+// VAULT_ROOT when rendering obsidian_url.
+const vaultRelative = (dir, file) =>
+  path.relative(VAULT_ROOT, path.join(dir, file)).split(path.sep).join('/')
+
 // --- Parse helpers (used during data ingestion) ---
 // Vault data is human-written markdown: tolerate both decimal conventions
 // ("19,99" European / "19.99" US) and thousands separators ("1.234,56",
@@ -108,7 +115,8 @@ async function initDb() {
     manana TEXT DEFAULT '',
     mediodia TEXT DEFAULT '',
     tarde TEXT DEFAULT '',
-    noche TEXT DEFAULT ''
+    noche TEXT DEFAULT '',
+    archivo TEXT DEFAULT ''
   )`)
 
   db.run(`CREATE TABLE IF NOT EXISTS assets (
@@ -117,7 +125,8 @@ async function initDb() {
     nombre TEXT NOT NULL,
     valor INTEGER NOT NULL,
     ingreso_generado INTEGER DEFAULT 0,
-    fecha TEXT NOT NULL
+    fecha TEXT NOT NULL,
+    archivo TEXT DEFAULT ''
   )`)
 
   db.run(`CREATE TABLE IF NOT EXISTS income_sources (
@@ -164,7 +173,7 @@ function loadCompras() {
 
       if (k === 'producto') {
         if (ci.producto) {
-          insert.run([cleanDate(ci.fecha), ci.comercio || '', ci.producto, ci.cantidad || 1, ci.precio_total || 0, ci.categoria || '', file])
+          insert.run([cleanDate(ci.fecha), ci.comercio || '', ci.producto, ci.cantidad || 1, ci.precio_total || 0, ci.categoria || '', vaultRelative(COMPRAS_DIR, file)])
           itemsOk++
         }
         ci = { ...ci, producto: val, cantidad: 1, precio_total: 0, categoria: '' }
@@ -183,7 +192,7 @@ function loadCompras() {
       }
     }
     if (ci.producto) {
-      insert.run([cleanDate(ci.fecha), ci.comercio || '', ci.producto, ci.cantidad || 1, ci.precio_total || 0, ci.categoria || '', file])
+      insert.run([cleanDate(ci.fecha), ci.comercio || '', ci.producto, ci.cantidad || 1, ci.precio_total || 0, ci.categoria || '', vaultRelative(COMPRAS_DIR, file)])
       itemsOk++
     }
   }
@@ -194,7 +203,7 @@ function loadCompras() {
 function loadFoodSora() {
   if (!fs.existsSync(DAILY_DIR)) return
   const foodFiles = fs.readdirSync(DAILY_DIR).filter(f => f.endsWith('.md'))
-  const insertF = db.prepare('INSERT OR REPLACE INTO food_sora (fecha, madrugada, manana, mediodia, tarde, noche) VALUES (?, ?, ?, ?, ?, ?)')
+  const insertF = db.prepare('INSERT OR REPLACE INTO food_sora (fecha, madrugada, manana, mediodia, tarde, noche, archivo) VALUES (?, ?, ?, ?, ?, ?, ?)')
   const fields = ['madrugada_food_sora', 'manana_food_sora', 'mediodia_food_sora', 'tarde_food_sora', 'noche_food_sora']
   const labels = ['madrugada', 'manana', 'mediodia', 'tarde', 'noche']
 
@@ -208,7 +217,7 @@ function loadFoodSora() {
       const last = matches.filter(m => m[1].trim() !== '').pop()
       vals[labels[i]] = last ? last[1].trim() : ''
     }
-    insertF.run([date, vals.madrugada, vals.manana, vals.mediodia, vals.tarde, vals.noche])
+    insertF.run([date, vals.madrugada, vals.manana, vals.mediodia, vals.tarde, vals.noche, vaultRelative(DAILY_DIR, file)])
   }
   insertF.free()
   console.log(`Finanzas DB: ${foodFiles.length} food_sora entries`)
@@ -217,7 +226,7 @@ function loadFoodSora() {
 function loadAssets() {
   if (!fs.existsSync(PATRIMONIO_DIR)) return
   const assetFiles = fs.readdirSync(PATRIMONIO_DIR).filter(f => f.endsWith('.md'))
-  const insertA = db.prepare('INSERT INTO assets (tipo, nombre, valor, ingreso_generado, fecha) VALUES (?, ?, ?, ?, ?)')
+  const insertA = db.prepare('INSERT INTO assets (tipo, nombre, valor, ingreso_generado, fecha, archivo) VALUES (?, ?, ?, ?, ?, ?)')
   for (const file of assetFiles) {
     const content = fs.readFileSync(path.join(PATRIMONIO_DIR, file), 'utf-8')
     const lines = content.split('\n')
@@ -233,7 +242,7 @@ function loadAssets() {
       else if (k === 'ingreso_generado') asset.ingreso_generado = parsePrecio(val)
       else if (k === 'fecha') asset.fecha = cleanDate(val)
     }
-    if (asset.tipo && asset.nombre) insertA.run([asset.tipo, asset.nombre, asset.valor, asset.ingreso_generado, asset.fecha])
+    if (asset.tipo && asset.nombre) insertA.run([asset.tipo, asset.nombre, asset.valor, asset.ingreso_generado, asset.fecha, vaultRelative(PATRIMONIO_DIR, file)])
   }
   insertA.free()
   console.log(`Finanzas DB: ${assetFiles.length} assets`)

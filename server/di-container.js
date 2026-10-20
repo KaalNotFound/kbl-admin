@@ -49,6 +49,10 @@ import { calculatePatrimonio } from './lib/finanzas-patrimonio.mjs';
 // helpers de vault y el proxy NLM al use-case — los routers ya no importan lib/
 import * as legacyMasteryStore from './lib/mastery-store.js';
 import * as vaultFs from './infrastructure/vault-fs-adapter.mjs';
+// Data provenance (Phase 1): obsidian:// deep-link builder exposed through the
+// vault helper API so vault-* use-cases can annotate sources (no direct lib/
+// imports inside the use-cases themselves).
+import { obsidianUrl } from './lib/obsidian-url.mjs';
 // Torre notebooklm (ADR-025): el port NLM es compartido por mastery (socrático)
 // y notebooklm (proxy HTTP). El proxy solo importa http — safe para import estático.
 import { nlmRequest, nlmHealth } from './lib/notebooklm-proxy.mjs';
@@ -93,6 +97,7 @@ function createContainer(opts = {}) {
     ensureDir: vaultFs.ensureDir,
     getQueueCounts: vaultFs.getQueueCounts,
     scanAreaRecursive: vaultFs.scanAreaRecursive,
+    obsidianUrl,
   };
 
   // Torre notebooklm (ADR-025): port NLM compartido (request + health). El

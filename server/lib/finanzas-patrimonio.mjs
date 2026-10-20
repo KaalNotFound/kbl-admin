@@ -2,13 +2,15 @@
 // (Split ADR-024)
 import { query } from './finanzas-db.mjs'
 import { getPerfil } from './finanzas-core.mjs'
+import { obsidianUrl } from './obsidian-url.mjs'
 
 // --- Patrimonio ---
 
 export function calculatePatrimonio() {
   const perfil = getPerfil()
-  const assetRows = query('SELECT tipo, nombre, valor, ingreso_generado, fecha FROM assets ORDER BY tipo', [])
-  const assets = assetRows.map(r => ({ tipo: r[0], nombre: r[1], valor: r[2], ingreso_generado: r[3], fecha: r[4] }))
+  const assetRows = query('SELECT tipo, nombre, valor, ingreso_generado, fecha, archivo FROM assets ORDER BY tipo', [])
+  // Data provenance (Phase 1): each asset row exposes its source note as obsidian_url
+  const assets = assetRows.map(r => ({ tipo: r[0], nombre: r[1], valor: r[2], ingreso_generado: r[3], fecha: r[4], archivo: r[5], obsidian_url: r[5] ? obsidianUrl(r[5]) : null }))
   const totalActivos = assets.reduce((s, a) => s + a.valor, 0)
   const ingresosPasivos = assets.reduce((s, a) => s + a.ingreso_generado, 0)
   const allocation = {}
