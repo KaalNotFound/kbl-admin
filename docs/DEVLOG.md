@@ -3,6 +3,94 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-20 — Phase 3: capture triage — the CAPTURE flow writes to the CORRECT vault location, structured fields
+
+`POST /api/capture` HARDCODED one destination
+(`02 - APRENDIZAJE/MoureDev-Master/_campus/_inbox/<slug>.md`) for EVERY
+entityType: a compra captured from the dashboard landed somewhere the
+finanzas watcher never watches, a food slot could never reach a Daily
+note, and the UI footer claiming "00 - INBOX" was simply a lie. Phase 3
+fixes the WRITE side of the loop so a dashboard capture lands exactly
+where its reader (watcher / pipeline) expects it (TDD strict: 18 RED
+tests before any implementation, suite 115 → 133/133, vite build OK).
+
+**`server/application/use-cases/capture-note.js` (extended):**
+
+- `resolveDirectory(entityType)` triage table: `compra` →
+  `<VAULT_ROOT>/02 - AREAS/008 - Trazabilidad Compras/Compras/`,
+  `food` (+ aliases `comida`, `food-sora`) → `<VAULT_ROOT>/05 -
+  JOURNAL/Daily/`, default (incl. `quick-capture` and any unknown
+  entity id) → `<VAULT_ROOT>/00 - INBOX/` (auto-created — the UI copy
+  finally becomes true).
+- Consumption path (`compra`) keeps the seed-convention filename
+  `<date>_<slug.comercio>.md` and writes the EXACT inline-field block
+  the finanzas parser consumes: `fecha:: / comercio:: / producto:: /
+  cantidad:: / precio_total:: / categoria::` + `# <producto>` under an
+  `entity_type:: compra` frontmatter. Producto falls back to the first
+  content line. No `Quick Note` leftovers.
+- Food path gains `upsertDailyInlineField(date, fieldKey, value)`:
+  missing Daily note → created with `# Diario` header + the field
+  line; existing note → ALL lines of that field removed, ONE clean
+  `<fieldKey>:: <value>` line appended — making
+  `parseFoodSoraFile()`'s last-non-empty-match rule deterministic.
+  Slot validation (`madrugada…noche`, `${slot}_food_sora`) rejects
+  garbage with a clean 400-class error.
+- Payload gains optional `fields` + `date` (YYYY-MM-DD); the legacy
+  2-arg shape and the ORIGINAL default template stay byte-compatible,
+  and callers without the vault port keep the legacy contentStore
+  behavior untouched.
+- Return contract on ALL triaged kinds:
+  `{ path: <vault-relative>, obsidian_url: obsidian://... }` — deep
+  link built by the injected `obsidianUrl` helper (phase 1 wiring).
+
+**`server/di-container.js`:** `captureNote` receives `vaultFsApi` as
+the new `vault` port (VAULT_ROOT + fs helpers + obsidianUrl — same
+injection shape the vault-* use cases already had). `contentStore` and
+`eventBus` stay.
+
+**`server/routes/capture.mjs`:** payload passes through untouched;
+validation errors of the triage map to **400 with a clear message**
+(ValidationError code), so a compra without `comercio`+`producto`
+or a food slot with an invalid `slot` can never crash — missing
+`content` without fields keeps the existing 400. `/api/capture/batch`
+supports the same per-item triage; plain items keep prior behavior.
+
+**`src/api/vault.ts` + `src/components/QuickCapture.tsx`:**
+`sendCapture(content, source, entityType?, fields?, date?)` typed;
+the FAB modal now reveals per-type structured inputs — compra:
+Comercio (required, names the ticket), Precio (RAW string, '42,75',
+parsed server-side), Categoría (optional); producto = textarea first
+line ("¿Qué compraste?" placeholder). food: slot select (Madrugada…
+Noche), hora (time input, defaults to now) + date (defaults today).
+Save feedback REPLACES the plain "✓ Guardado": a `✓ <type> guardado
+en <vault-relative path>` line plus the provenance chip **"Abrir en
+Obsidian ↗"** (`target=_blank rel=noopener noreferrer`, same chip
+style as phase 1). The footer destination copy is now computed per
+type (`00 - INBOX/` / `.../Compras/` / `05 - JOURNAL/Daily/`) —
+what the UI claims is what actually happens.
+
+**Demo loop (verified live on PORT=3007 against a demo-vault copy):**
+capture a compra with `{comercio: Mercadona, precio_total: 42,75}` →
+the file APPEARS at `Compras/2026-10-20_mercadona.md` with the exact
+parser format → the chokidar watcher re-indexes it live (`compras
+'2026-10-20_mercadona.md' re-indexed (1 items)`, ~1.5s after the
+write) → `/api/search?q=…` shows the product at precio_total 43
+(European comma parsed) with `archivo` + `obsidian_url` provenance →
+the modal shows the feedback line + "Abrir en Obsidian ↗" deep link.
+Food equivalent: `{slot: manana, hora: 08:30}` → `Daily/2026-10-20.md`
+created → `/api/food-sora` shows `Mañana 08:30`; a second capture with
+`09:10` REPLACES the slot through the same live loop.
+
+**Tests (`server/__tests__/capture-triage.test.js`, 18):** temp-vault
+harness (provenance mechanics + real app). Pins: triage table +
+aliases; quick-capture dirs auto-created in a fresh vault; compra
+EXACT inline content; first-line producto fallback; compra validation
+(no fields / no producto → 400-class, never a write); food create +
+REPLACE semantics with other slots surviving; invalid slot rejection;
+finanzas DB roundtrip proving watcher-compatibility (42,75 → 43);
+HTTP contract (`path` + `obsidian_url` on every success, 400s without
+crashes) and batch triage.
+
 ## 2026-10-20 — Phase 2: finanzas live sync — chokidar watches the vault, no restarts
 
 The SQL.js finanzas DB was a STARTUP SNAPSHOT: `finanzas-db.mjs` scanned

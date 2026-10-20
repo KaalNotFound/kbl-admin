@@ -34,11 +34,30 @@ export function fetchEntityCatalog(): Promise<EntityCatalogEntry[]> {
   return fetchJSON<EntityCatalogEntry[]>(`/api/entity-catalog`)
 }
 
-export function sendCapture(content: string, source: string, entityType?: string): Promise<{ success: boolean; path: string }> {
+export type CaptureFields = { slot?: string; hora?: string; comercio?: string; producto?: string; precio_total?: string; categoria?: string; [key: string]: string | number | undefined }
+export type CaptureResponse = { success: boolean; path: string; obsidian_url?: string | null }
+
+// Phase 3 capture triage: an optional `fields` map carries the per-type
+// structured data (compra → comercio/precio_total/categoria, food → slot/hora)
+// and `date` (YYYY-MM-DD, defaults to today server-side). RAW price strings
+// ('42,75') travel untouched — parsing happens server-side only.
+export function sendCapture(
+  content: string,
+  source: string,
+  entityType?: string,
+  fields?: CaptureFields,
+  date?: string,
+): Promise<CaptureResponse> {
   return fetch(`/api/capture`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, source, entityType: entityType || null }),
+    body: JSON.stringify({
+      content,
+      source,
+      entityType: entityType || null,
+      fields: fields || null,
+      date: date || null,
+    }),
   }).then(r => r.json())
 }
 

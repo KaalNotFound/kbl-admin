@@ -107,7 +107,11 @@ function createContainer(opts = {}) {
   // Use cases — factory functions inject their own ports
   const useCases = {
     submitQuizReview: createSubmitQuizReview({ masteryStore, eventBus }),
-    captureNote: createCaptureNote({ contentStore, eventBus }),
+    // Capture triage (phase 3): the use case receives vaultFsApi as the vault
+    // port (VAULT_ROOT + fs helpers + obsidianUrl, phase 1 wiring) so notes
+    // land in the watcher-owned dir per type instead of the hardcoded campus
+    // inbox. Legacy contentStore kept for callers without the port.
+    captureNote: createCaptureNote({ contentStore, eventBus, vault: vaultFsApi }),
     submitActiveRecallReview: createSubmitActiveRecallReview({ masteryStore, eventBus }),
     // Torre finanzas (ADR-025): el router _finanzas.mjs recibe la lógica por DI,
     // no importa lib/ directo (boundary §2.1). ensureDb = puerto de datos (I/O),
