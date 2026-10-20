@@ -151,6 +151,94 @@ async function initDb() {
   dbInitialized = true
 }
 
+// --- Per-file parsers (single source of truth for full loads AND live sync) ---
+// Phase 2 live sync: these take a file's CONTENT and its vault-relative
+// provenance path and return parsed row objects, so the full-directory
+// loaders and the chokidar watcher (finanzas-watcher.mjs) never diverge.
+
+/**
+ * Parse one compras ticket note into item rows.
+ * Inline-field logic extracted from loadCompras — behavior identical:
+ * each `producto::` line starts a new item; keys after it fill that item;
+ * a `precio_total::`/`precio::` BEFORE a producto still applies to it
+ * (waits), matching the original loop's state machine.
+ */
+function parseComprasFile(content, relArchivo) {
+  const rows = []
+  const lines = content.split('\n')
+  let ci = {}
+
+  for (const line of lines) {
+    const [key, ...valParts] = line.split('::')
+    const val = valParts.join('::').trim()
+    if (!key) continue
+    const k = key.trim().toLowerCase()
+
+    if (k === 'producto') {
+      if (ci.producto) {
+        rows.push({ fecha: cleanDate(ci.fecha), comercio: ci.comercio || '', producto: ci.producto, cantidad: ci.cantidad || 1, precio_total: ci.precio_total || 0, categoria: ci.categoria || '', archivo: relArchivo })
+      }
+      ci = { ...ci, producto: val, cantidad: 1, precio_total: 0, categoria: '' }
+    } else if (k === 'fecha' && val) {
+      ci.fecha = cleanDate(val)
+    } else if (k === 'comercio' && val) {
+      ci.comercio = val
+    } else if (k === 'cantidad') {
+      ci.cantidad = parseCantidad(val)
+    } else if (k === 'precio_total') {
+      ci.precio_total = parsePrecio(val)
+    } else if (k === 'precio') {
+      ci.precio_total = parsePrecio(val)
+    } else if (k === 'categoria') {
+      ci.categoria = val
+    }
+  }
+  if (ci.producto) {
+    rows.push({ fecha: cleanDate(ci.fecha), comercio: ci.comercio || '', producto: ci.producto, cantidad: ci.cantidad || 1, precio_total: ci.precio_total || 0, categoria: ci.categoria || '', archivo: relArchivo })
+  }
+  return rows
+}
+
+/**
+ * Parse one Daily note's food_sora slot fields into one table row.
+ * The date comes from the FILENAME (same`cleanDate(file)` heuristic as
+ * the full loader), not from frontmatter.
+ */
+function parseFoodSoraFile(content, fileName, relArchivo) {
+  const fields = ['madrugada_food_sora', 'manana_food_sora', 'mediodia_food_sora', 'tarde_food_sora', 'noche_food_sora']
+  const labels = ['madrugada', 'manana', 'mediodia', 'tarde', 'noche']
+  const vals = {}
+  for (let i = 0; i < fields.length; i++) {
+    const rx = new RegExp(`^[ \\t]*-?[ \\t]*${fields[i]}::[ \\t]*(.*)`, 'gm')
+    const matches = [...content.matchAll(rx)]
+    const last = matches.filter(m => m[1].trim() !== '').pop()
+    vals[labels[i]] = last ? last[1].trim() : ''
+  }
+  return { fecha: cleanDate(fileName), ...vals, archivo: relArchivo }
+}
+
+/**
+ * Parse one Patrimonio asset note into a row, or null when tipo/nombre
+ * are missing (same filter as the full loader).
+ */
+function parseAssetsFile(content, relArchivo) {
+  const lines = content.split('\n')
+  const asset = { tipo: '', nombre: '', valor: 0, ingreso_generado: 0, fecha: '' }
+  for (const line of lines) {
+    const [key, ...valParts] = line.split('::')
+    const val = valParts.join('::').trim()
+    if (!key) continue
+    const k = key.trim().toLowerCase()
+    if (k === 'tipo') asset.tipo = val
+    else if (k === 'nombre') asset.nombre = val
+    else if (k === 'valor') asset.valor = parsePrecio(val)
+    else if (k === 'ingreso_generado') asset.ingreso_generado = parsePrecio(val)
+    else if (k === 'fecha') asset.fecha = cleanDate(val)
+  }
+  if (!asset.tipo || !asset.nombre) return null
+  return { ...asset, archivo: relArchivo }
+}
+
 function loadCompras() {
   // Fresh clones / new vaults may not have the Compras folder yet — an
   // unguarded readdirSync threw ENOENT, initDb latched dbInitFailed and
@@ -162,37 +250,9 @@ function loadCompras() {
 
   for (const file of files) {
     const content = fs.readFileSync(path.join(COMPRAS_DIR, file), 'utf-8')
-    const lines = content.split('\n')
-    let ci = {}
-
-    for (const line of lines) {
-      const [key, ...valParts] = line.split('::')
-      const val = valParts.join('::').trim()
-      if (!key) continue
-      const k = key.trim().toLowerCase()
-
-      if (k === 'producto') {
-        if (ci.producto) {
-          insert.run([cleanDate(ci.fecha), ci.comercio || '', ci.producto, ci.cantidad || 1, ci.precio_total || 0, ci.categoria || '', vaultRelative(COMPRAS_DIR, file)])
-          itemsOk++
-        }
-        ci = { ...ci, producto: val, cantidad: 1, precio_total: 0, categoria: '' }
-      } else if (k === 'fecha' && val) {
-        ci.fecha = cleanDate(val)
-      } else if (k === 'comercio' && val) {
-        ci.comercio = val
-      } else if (k === 'cantidad') {
-        ci.cantidad = parseCantidad(val)
-      } else if (k === 'precio_total') {
-        ci.precio_total = parsePrecio(val)
-      } else if (k === 'precio') {
-        ci.precio_total = parsePrecio(val)
-      } else if (k === 'categoria') {
-        ci.categoria = val
-      }
-    }
-    if (ci.producto) {
-      insert.run([cleanDate(ci.fecha), ci.comercio || '', ci.producto, ci.cantidad || 1, ci.precio_total || 0, ci.categoria || '', vaultRelative(COMPRAS_DIR, file)])
+    const rows = parseComprasFile(content, vaultRelative(COMPRAS_DIR, file))
+    for (const r of rows) {
+      insert.run([r.fecha, r.comercio, r.producto, r.cantidad, r.precio_total, r.categoria, r.archivo])
       itemsOk++
     }
   }
@@ -204,20 +264,11 @@ function loadFoodSora() {
   if (!fs.existsSync(DAILY_DIR)) return
   const foodFiles = fs.readdirSync(DAILY_DIR).filter(f => f.endsWith('.md'))
   const insertF = db.prepare('INSERT OR REPLACE INTO food_sora (fecha, madrugada, manana, mediodia, tarde, noche, archivo) VALUES (?, ?, ?, ?, ?, ?, ?)')
-  const fields = ['madrugada_food_sora', 'manana_food_sora', 'mediodia_food_sora', 'tarde_food_sora', 'noche_food_sora']
-  const labels = ['madrugada', 'manana', 'mediodia', 'tarde', 'noche']
 
   for (const file of foodFiles) {
     const content = fs.readFileSync(path.join(DAILY_DIR, file), 'utf-8')
-    const date = cleanDate(file)
-    const vals = {}
-    for (let i = 0; i < fields.length; i++) {
-      const rx = new RegExp(`^[ \\t]*-?[ \\t]*${fields[i]}::[ \\t]*(.*)`, 'gm')
-      const matches = [...content.matchAll(rx)]
-      const last = matches.filter(m => m[1].trim() !== '').pop()
-      vals[labels[i]] = last ? last[1].trim() : ''
-    }
-    insertF.run([date, vals.madrugada, vals.manana, vals.mediodia, vals.tarde, vals.noche, vaultRelative(DAILY_DIR, file)])
+    const row = parseFoodSoraFile(content, file, vaultRelative(DAILY_DIR, file))
+    insertF.run([row.fecha, row.madrugada, row.manana, row.mediodia, row.tarde, row.noche, row.archivo])
   }
   insertF.free()
   console.log(`Finanzas DB: ${foodFiles.length} food_sora entries`)
@@ -229,20 +280,8 @@ function loadAssets() {
   const insertA = db.prepare('INSERT INTO assets (tipo, nombre, valor, ingreso_generado, fecha, archivo) VALUES (?, ?, ?, ?, ?, ?)')
   for (const file of assetFiles) {
     const content = fs.readFileSync(path.join(PATRIMONIO_DIR, file), 'utf-8')
-    const lines = content.split('\n')
-    const asset = { tipo: '', nombre: '', valor: 0, ingreso_generado: 0, fecha: '' }
-    for (const line of lines) {
-      const [key, ...valParts] = line.split('::')
-      const val = valParts.join('::').trim()
-      if (!key) continue
-      const k = key.trim().toLowerCase()
-      if (k === 'tipo') asset.tipo = val
-      else if (k === 'nombre') asset.nombre = val
-      else if (k === 'valor') asset.valor = parsePrecio(val)
-      else if (k === 'ingreso_generado') asset.ingreso_generado = parsePrecio(val)
-      else if (k === 'fecha') asset.fecha = cleanDate(val)
-    }
-    if (asset.tipo && asset.nombre) insertA.run([asset.tipo, asset.nombre, asset.valor, asset.ingreso_generado, asset.fecha, vaultRelative(PATRIMONIO_DIR, file)])
+    const row = parseAssetsFile(content, vaultRelative(PATRIMONIO_DIR, file))
+    if (row) insertA.run([row.tipo, row.nombre, row.valor, row.ingreso_generado, row.fecha, row.archivo])
   }
   insertA.free()
   console.log(`Finanzas DB: ${assetFiles.length} assets`)
@@ -273,6 +312,110 @@ function loadWallet() {
   return loaded
 }
 
+// --- Live-sync (Phase 2) single-file incremental upserts ---
+// The chokidar watcher (finanzas-watcher.mjs) calls these per fs event:
+// re-parse ONE file, delete its rows by provenance path, insert fresh
+// ones. No full rescan. Every helper is individually guarded — a bad
+// file degrades ONLY itself (recorded as `<source>:<basename>` in
+// sourceStatus) and never crashes the process nor latches dbInitFailed.
+
+function exec(sql, params) {
+  db.run(sql, params)
+}
+
+// Provenance-path deletion: exact current relative path (the watcher's
+// case), any `*/<basename>` variant, plus the bare-basename heuristic for
+// legacy rows written before Phase 1 normalized paths.
+function deleteProvenanceRows(table, relArchivo, basename) {
+  exec(`DELETE FROM ${table} WHERE archivo = ? OR archivo LIKE ? OR archivo = ?`, [relArchivo, `%/${basename}`, basename])
+}
+
+function upsertComprasFile(absPath) {
+  const name = path.basename(absPath)
+  if (!name.endsWith('.md')) return
+  const rel = vaultRelative(COMPRAS_DIR, name)
+  try {
+    const rows = parseComprasFile(fs.readFileSync(absPath, 'utf-8'), rel)
+    exec('DELETE FROM items WHERE archivo = ?', [rel])
+    const insert = db.prepare('INSERT INTO items (fecha, comercio, producto, cantidad, precio_total, categoria, archivo) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    for (const r of rows) insert.run([r.fecha, r.comercio, r.producto, r.cantidad, r.precio_total, r.categoria, r.archivo])
+    insert.free()
+    console.log(`Finanzas watcher: compras '${name}' re-indexed (${rows.length} items)`)
+  } catch (e) {
+    // Deliberately swallow: stale rows stay intact, the error is visible
+    // in diagnostics and the next successful event repairs the file.
+    sourceStatus[`compras:${name}`] = `error:${e?.message || 'unknown'}`
+    console.warn(`Finanzas watcher: upsert failed for '${name}' —`, e?.message)
+  }
+}
+
+function removeComprasFile(absPath) {
+  const name = path.basename(absPath)
+  if (!name.endsWith('.md')) return
+  deleteProvenanceRows('items', vaultRelative(COMPRAS_DIR, name), name)
+}
+
+function upsertFoodSoraFile(absPath) {
+  const name = path.basename(absPath)
+  if (!name.endsWith('.md')) return
+  const rel = vaultRelative(DAILY_DIR, name)
+  try {
+    const row = parseFoodSoraFile(fs.readFileSync(absPath, 'utf-8'), name, rel)
+    deleteProvenanceRows('food_sora', rel, name)
+    exec('INSERT OR REPLACE INTO food_sora (fecha, madrugada, manana, mediodia, tarde, noche, archivo) VALUES (?, ?, ?, ?, ?, ?, ?)', [row.fecha, row.madrugada, row.manana, row.mediodia, row.tarde, row.noche, row.archivo])
+    console.log(`Finanzas watcher: food_sora '${name}' re-indexed`)
+  } catch (e) {
+    sourceStatus[`food_sora:${name}`] = `error:${e?.message || 'unknown'}`
+    console.warn(`Finanzas watcher: upsert failed for '${name}' —`, e?.message)
+  }
+}
+
+function removeFoodSoraFile(absPath) {
+  const name = path.basename(absPath)
+  if (!name.endsWith('.md')) return
+  deleteProvenanceRows('food_sora', vaultRelative(DAILY_DIR, name), name)
+}
+
+function upsertAssetsFile(absPath) {
+  const name = path.basename(absPath)
+  if (!name.endsWith('.md')) return
+  const rel = vaultRelative(PATRIMONIO_DIR, name)
+  try {
+    const rows = [parseAssetsFile(fs.readFileSync(absPath, 'utf-8'), rel)].filter(Boolean)
+    exec('DELETE FROM assets WHERE archivo = ?', [rel])
+    const insert = db.prepare('INSERT INTO assets (tipo, nombre, valor, ingreso_generado, fecha, archivo) VALUES (?, ?, ?, ?, ?, ?)')
+    for (const r of rows) insert.run([r.tipo, r.nombre, r.valor, r.ingreso_generado, r.fecha, r.archivo])
+    insert.free()
+    console.log(`Finanzas watcher: assets '${name}' re-indexed (${rows.length} rows)`)
+  } catch (e) {
+    sourceStatus[`assets:${name}`] = `error:${e?.message || 'unknown'}`
+    console.warn(`Finanzas watcher: upsert failed for '${name}' —`, e?.message)
+  }
+}
+
+function removeAssetsFile(absPath) {
+  const name = path.basename(absPath)
+  if (!name.endsWith('.md')) return
+  deleteProvenanceRows('assets', vaultRelative(PATRIMONIO_DIR, name), name)
+}
+
+function clearWalletRows() {
+  exec("DELETE FROM income_sources WHERE fuente LIKE 'wallet:%'")
+}
+
+function refreshWallet() {
+  try {
+    // Wallet re-loads are NOT keyed by provenance path (income_sources has
+    // no archivo column) — the `wallet:` fuente prefix is the namespace.
+    clearWalletRows()
+    const count = loadWallet()
+    sourceStatus.wallet = `ok:${count ?? ''}`
+  } catch (e) {
+    sourceStatus.wallet = `error:${e?.message || 'unknown'}`
+    console.warn('Finanzas watcher: wallet refresh failed —', e?.message)
+  }
+}
+
 // --- Public API ---
 
 export async function ensureDb() {
@@ -281,4 +424,21 @@ export async function ensureDb() {
   return dbInitialized
 }
 
-export { query, parsePrecio, parseCantidad, cleanDate, getInitDiagnostics }
+export {
+  query,
+  parsePrecio,
+  parseCantidad,
+  cleanDate,
+  getInitDiagnostics,
+  parseComprasFile,
+  parseFoodSoraFile,
+  parseAssetsFile,
+  upsertComprasFile,
+  removeComprasFile,
+  upsertFoodSoraFile,
+  removeFoodSoraFile,
+  upsertAssetsFile,
+  removeAssetsFile,
+  clearWalletRows,
+  refreshWallet,
+}

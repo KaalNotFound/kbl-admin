@@ -97,6 +97,13 @@ const isMain = process.argv[1] && (
 );
 
 if (isMain) {
+  // Phase 2 live sync: the finanzas DB is a startup snapshot unless the
+  // vault watcher runs. Fire-and-forget — a watcher failure must never
+  // prevent boot (dynamic import keeps test-time imports side-effect free).
+  // KBL_WATCH=0 disables it (CI).
+  import('./lib/finanzas-watcher.mjs')
+    .then((m) => m.startFinanzasWatcher())
+    .catch((err) => console.warn('Finanzas watcher failed to start:', err?.message || err));
   app.listen(PORT, HOST, () => {
     console.log(`KBL Admin API running on http://${HOST}:${PORT}`);
   });

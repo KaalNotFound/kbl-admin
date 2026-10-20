@@ -3,6 +3,71 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-20 — Phase 2: finanzas live sync — chokidar watches the vault, no restarts
+
+The SQL.js finanzas DB was a STARTUP SNAPSHOT: `finanzas-db.mjs` scanned
+the whole vault once at boot, so a ticket edited in Obsidian stayed stale
+until the server was restarted. Phase 2 wires a chokidar file watcher
+that incrementally re-indexes changed files into the RUNNING database
+(TDD strict: 7 RED tests before any implementation, suite 108 → 115/115,
+vite build OK).
+
+**`server/lib/finanzas-watcher.mjs` (new):**
+
+- Watches DIRECTORIES (never individual files — the validated pattern
+  from obsidian-brain/Cairn/vault indexers): Compras, Patrimonio, Daily
+  (<VAULT_ROOT>/05 - JOURNAL) and the `pau-agent` dir holding
+  `_wallet.json`. Never touches ports; `KBL_WATCH=0` disables it (CI).
+- `ignoreInitial: true`, `awaitWriteFinish: {stabilityThreshold: 250,
+  pollInterval: 100}` (Obsidian autosaves in chunks), dotfiles ignored
+  (`.obsidian/`, hidden), and a per-path 1200ms LAST-EVENT-WINS debounce:
+  a burst of autosave changes on one file coalesces into ONE re-index.
+- Incremental upsert per fs event: re-parse THAT file only → `DELETE`
+  rows for its `archivo` provenance path → insert fresh rows. No full
+  rescan ever. Deletion of a file removes its rows (exact relative path
+  + `*/<basename>` + bare-basename heuristics). `_wallet.json` change →
+  wipes `wallet:%` income rows and re-runs the hardened loader; rename =
+  unlink + add events → converged by the pair.
+- Every apply is guarded: one bad file degrades only itself — recorded
+  as `<source>:<basename>` in `getInitDiagnostics().sources` — and never
+  crashes the process nor latches `dbInitFailed`.
+- `startFinanzasWatcher()` awaits `ensureDb()` (declines with
+  `db-init-failed` if false), is double-start guarded at module level
+  (`already-started`), and awaits the chokidar initial scan so callers
+  editing right after the promise resolves never lose events.
+  `stopFinanzasWatcher()` + `_resetWatcherForTest()` close timers
+  deterministically.
+
+**`server/lib/finanzas-db.mjs` (refactor, behavior-preserving):**
+
+- Three per-file parsers extracted as the single source of truth for
+  BOTH the full loaders and live sync — they can't diverge:
+  `parseComprasFile(content, relArchivo)`, `parseFoodSoraFile(...)`,
+  `parseAssetsFile(...)`; `loadCompras/loadFoodSora/loadAssets` now
+  collect their rows through them (zero behavior change, pinned by the
+  untouched existing suite).
+- New incremental helpers consumed by the watcher: `upsert*/remove*`
+  per source plus `clearWalletRows()/refreshWallet()`.
+
+**Boot wiring (`server/index.js`):** `startFinanzasWatcher()` fires
+and-forget inside the `isMain` block (dynamic import so test-time
+imports of the app stay side-effect free), `.catch` logs — a watcher
+failure can never prevent boot or block `listen`.
+
+**Tests (`server/__tests__/finanzas-watcher.test.js`):** temp-vault
+harness (same mechanics as `finanzas-resilience.test.js`), REAL timers
+only — bounded retry waits poll every 200ms for up to ~6s (20s test
+timeout) so OS event → awaitWriteFinish → debounce is deterministic on
+CI without fake time. Covers: modified `precio_total` (incl. comma
+decimals `42,75` → 43) visible without restart, new file indexed,
+deleted file's rows removed, food_sora slot edited in a Daily note,
+unreadable file (rows intact + `error` recorded + repair restores),
+double-start guard, and `KBL_WATCH=0`.
+
+**Verification:** full suite 115/115, `vite build` OK, live boot check
+(API on port, watcher reports watching the real vault dirs alongside
+the Phase-1 full load).
+
 ## 2026-10-20 — Phase 1: data provenance + `obsidian://` deep links
 
 Every vault-sourced row now exposes where it came from, one click away
