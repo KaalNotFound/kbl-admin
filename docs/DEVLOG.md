@@ -3,6 +3,51 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-10-20 — Phase 0: finanzas survives malformed vault data (per-source isolation)
+
+**Context:** the data-provenance audit verdict was "robust against
+absence, fragile against garbage". A single hand-broken file killed the
+entire finanzas domain. This phase hardens the parse layer so every
+vault data source degrades ONLY itself (TDD: 11 new tests RED → GREEN,
+suite 99/99).
+
+**Per-source isolation (`server/lib/finanzas-db.mjs`):**
+
+- `initDb()` no longer wraps all four loaders in one try/catch. Each
+  source (compras, food_sora, assets, wallet) runs through
+  `loadSource()` — a corrupt `_wallet.json` previously latched
+  `dbInitFailed=true` forever and killed summary + compras + food-sora +
+  patrimonio together.
+- New `getInitDiagnostics()` exposes `{initialized, initFailed,
+  sources: {compras: 'ok:1', wallet: 'error:...'}}` — the seed for a
+  future Vault Doctor page.
+- `loadWallet()` guards: not-valid-JSON and non-array `entries` throw a
+  descriptive error (caught isolately); individual malformed entries are
+  skipped instead of crashing the insert loop; amounts validated as
+  finite numbers.
+
+**Number parsing tolerates both conventions:**
+
+- `normalizeNumber()`: last dot-or-comma block is the decimal one. Now
+  `19,99` → 20 (was silently truncated to 19), `1.234,56` and
+  `1,234.56` → 1235, `€3,40` → 3. New test file documents the known
+  ambiguity: bare `1.234` reads as a decimal (heuristic documented in
+  code comment).
+
+**Runway survives corrupt `presupuesto-state.json`**
+
+- (`finanzas-core.mjs`): single guarded `readPresupuestoState()` —
+  corrupt JSON, non-object or non-finite `saldo` returns `null` and
+  logs a warning instead of cascading NaN.
+- (`finanzas-runway.mjs`): uses the reader once, validates
+  `saldo_anterior`/`fecha_saldo` individually, skips reconciliation on
+  missing state — saldo falls back to perfil defaults.
+
+**Live verification:** temp vault with corrupt wallet + corrupt
+presupuesto-state + one valid `precio_total:: 12,50` ticket —
+`/api/summary` (total: 13), `/api/search` (item found with archivo) and
+`/api/finanzas` (finite runway, reconciliacion null) all stay UP.
+
 ## 2026-10-19 — Food Sora dashboard survived an empty vault (Finanzas demo complete)
 
 **Symptom:** entering Finanzas → Food Sora killed the entire page with

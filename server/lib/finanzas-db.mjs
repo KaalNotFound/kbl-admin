@@ -11,16 +11,35 @@ const PATRIMONIO_DIR = path.join(VAULT_ROOT, '02 - AREAS', '008 - Trazabilidad C
 const WALLET_PATH = path.join(VAULT_ROOT, '01 - PROYECTOS', 'AlToquePanama-Pau', 'pau-agent', '_wallet.json')
 
 // --- Parse helpers (used during data ingestion) ---
+// Vault data is human-written markdown: tolerate both decimal conventions
+// ("19,99" European / "19.99" US) and thousands separators ("1.234,56",
+// "1,234.56"). The LAST dot-or-comma block is the decimal one (standard
+// heuristic; "1.234" is intentionally read as a decimal — see DEVLOG).
+
+function normalizeNumber(raw) {
+  if (raw == null) return NaN
+  let s = String(raw).replace(/[€$]/g, '').replace(/\s/g, '')
+  if (!s) return NaN
+  const hasDot = s.includes('.')
+  const hasComma = s.includes(',')
+  if (hasDot && hasComma) {
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.')
+    else s = s.replace(/,/g, '')
+  } else if (hasComma) {
+    s = s.replace(/,/g, '.')
+  }
+  const n = parseFloat(s)
+  return Number.isFinite(n) ? n : NaN
+}
 
 function parsePrecio(val) {
-  if (!val) return 0
-  return Math.round(parseFloat(val.replace('€', '').replace('$', '').trim())) || 0
+  const n = normalizeNumber(val)
+  return Number.isFinite(n) ? Math.round(n) : 0
 }
 
 function parseCantidad(val) {
-  if (!val) return 1
-  const n = parseFloat(val.trim())
-  return isNaN(n) ? 1 : n
+  const n = normalizeNumber(val)
+  return Number.isFinite(n) ? n : 1
 }
 
 function cleanDate(raw) {
@@ -29,16 +48,42 @@ function cleanDate(raw) {
 }
 
 // --- DB singleton ---
+// Each vault data source is loaded ISOLATEDLY: a malformed file (e.g. a
+// hand-broken _wallet.json) must degrade ONLY that source, never latch the
+// whole finanzas layer into a permanent dbInitFailed state. Diagnostics
+// stay queryable for future vault-doctor surfaces.
 
 let db = null
 let dbInitialized = false
 let dbInitFailed = false
+const sourceStatus = {}
 
 function query(sql, params) {
   try {
     const r = db.exec(sql, params)
     return r[0]?.values || []
-  } catch { return [] }
+  } catch (e) {
+    console.warn('Finanzas query failed:', e?.message)
+    return []
+  }
+}
+
+function getInitDiagnostics() {
+  return {
+    initialized: dbInitialized,
+    initFailed: dbInitFailed,
+    sources: { ...sourceStatus },
+  }
+}
+
+function loadSource(name, fn) {
+  try {
+    const count = fn()
+    sourceStatus[name] = `ok:${count ?? ''}`
+  } catch (e) {
+    sourceStatus[name] = `error:${e?.message || 'unknown'}`
+    console.warn(`Finanzas DB: source '${name}' degraded —`, e?.message)
+  }
 }
 
 async function initDb() {
@@ -88,16 +133,13 @@ async function initDb() {
   db.run('DELETE FROM assets')
   db.run('DELETE FROM income_sources')
 
-  try {
-    loadCompras()
-    loadFoodSora()
-    loadAssets()
-    loadWallet()
-    dbInitialized = true
-  } catch (e) {
-    dbInitFailed = true
-    console.error('Finanzas DB init error:', e.message)
-  }
+  // Structural setup succeeded — the DB is usable even if every vault
+  // source is garbage. Each loader degrades independently.
+  loadSource('compras', loadCompras)
+  loadSource('food_sora', loadFoodSora)
+  loadSource('assets', loadAssets)
+  loadSource('wallet', loadWallet)
+  dbInitialized = true
 }
 
 function loadCompras() {
@@ -198,14 +240,28 @@ function loadAssets() {
 }
 
 function loadWallet() {
-  if (!fs.existsSync(WALLET_PATH)) return
-  const wallet = JSON.parse(fs.readFileSync(WALLET_PATH, 'utf-8'))
+  if (!fs.existsSync(WALLET_PATH)) return 0
+  let wallet
+  try {
+    wallet = JSON.parse(fs.readFileSync(WALLET_PATH, 'utf-8'))
+  } catch (e) {
+    throw new Error(`_wallet.json is not valid JSON — ${e.message}`)
+  }
+  if (!Array.isArray(wallet.entries)) {
+    throw new Error('_wallet.json "entries" is not a list')
+  }
   const insertI = db.prepare('INSERT INTO income_sources (fuente, monto, tipo, fecha) VALUES (?, ?, ?, ?)')
+  let loaded = 0
   for (const entry of wallet.entries) {
-    insertI.run([`wallet:${entry.concept}`, entry.amount, 'variable', entry.date])
+    const concept = typeof entry?.concept === 'string' && entry.concept.trim() ? entry.concept.trim() : null
+    const amount = Number.isFinite(Number(entry?.amount)) && entry?.amount !== null && entry?.amount !== '' && !Number.isNaN(Number(entry.amount)) ? Number(entry.amount) : NaN
+    if (!concept || !Number.isFinite(amount)) continue
+    insertI.run([`wallet:${concept}`, amount, 'variable', cleanDate(entry.date || '') || ''])
+    loaded++
   }
   insertI.free()
-  console.log(`Finanzas DB: ${wallet.entries.length} income entries`)
+  console.log(`Finanzas DB: ${loaded} income entries`)
+  return loaded
 }
 
 // --- Public API ---
@@ -216,4 +272,4 @@ export async function ensureDb() {
   return dbInitialized
 }
 
-export { query, parsePrecio, parseCantidad, cleanDate }
+export { query, parsePrecio, parseCantidad, cleanDate, getInitDiagnostics }

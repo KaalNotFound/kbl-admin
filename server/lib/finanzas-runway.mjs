@@ -2,17 +2,18 @@
 // (Split ADR-024)
 import fs from 'fs'
 import { query } from './finanzas-db.mjs'
-import { getPerfil, parseBudget, loadMercadoDb, PRESUPUESTO_STATE } from './finanzas-core.mjs'
+import { getPerfil, parseBudget, loadMercadoDb, readPresupuestoState } from './finanzas-core.mjs'
 
 // --- Finanzas (runway + mercado + presupuesto) ---
+// presupuesto-state.json is read through the guarded core reader: corrupt
+// JSON or non-numeric saldo degrades to null and the calculation falls
+// back to perfil defaults instead of cascading NaN (Phase 0 hardening).
 
 export function calculateFinanzas() {
   const perfil = getPerfil()
+  const state = readPresupuestoState()
   let saldo = perfil.saldo_default || 0
-  if (fs.existsSync(PRESUPUESTO_STATE)) {
-    const p = JSON.parse(fs.readFileSync(PRESUPUESTO_STATE, 'utf8'))
-    saldo = p.saldo || perfil.saldo_default || 0
-  }
+  if (state) saldo = state.saldo
   const gastosFijos = Object.values(perfil.gastos_fijos_mensuales).reduce((s, v) => s + v, 0)
   const ingresos = Object.values(perfil.ingresos_mensuales).reduce((s, v) => s + v, 0)
   const tresMesesAtras = new Date()
@@ -32,17 +33,18 @@ export function calculateFinanzas() {
     runway = { meses: Math.round(meses * 10) / 10, dias: Math.round(meses * 30), fecha_fin: fechaFin.toISOString().slice(0, 10) }
   }
   let reconciliacion = null
-  if (fs.existsSync(PRESUPUESTO_STATE)) {
-    const pState = JSON.parse(fs.readFileSync(PRESUPUESTO_STATE, 'utf8'))
-    const saldoAnterior = pState.saldo_anterior || saldo
-    const fechaAnterior = pState.fecha_saldo || new Date().toISOString().slice(0, 10)
+  if (state) {
+    const saldoActual = state.saldo
+    const saldoAnterior = Number.isFinite(Number(state.saldo_anterior)) ? Number(state.saldo_anterior) : saldoActual
+    const fechaAnteriorOk = state.fecha_saldo && !Number.isNaN(new Date(state.fecha_saldo).getTime())
+    const fechaAnterior = fechaAnteriorOk ? state.fecha_saldo : new Date().toISOString().slice(0, 10)
     const gastoRows = query(`SELECT COALESCE(SUM(precio_total), 0) FROM items WHERE fecha >= ?`, [fechaAnterior])
     const gastosRegistrados = gastoRows[0]?.[0] || 0
     const diasDesde = Math.max(1, Math.floor((Date.now() - new Date(fechaAnterior).getTime()) / 86400000))
     const ingresosEstimados = Math.round(ingresos * (diasDesde / 30))
     const esperado = saldoAnterior + ingresosEstimados - gastosRegistrados
-    const diferencial = esperado - saldo
-    reconciliacion = { saldo_anterior: saldoAnterior, saldo_actual: saldo, esperado, diferencial: Math.abs(diferencial), gastos_registrados: gastosRegistrados, ingresos_estimados: ingresosEstimados, desde_fecha: fechaAnterior, tiene_diferencial: Math.abs(diferencial) > 100, interpretacion: diferencial > 0 ? `Gastaste ~$${Math.abs(diferencial)} sin registrar desde ${fechaAnterior}` : diferencial < 0 ? `Tenes ~$${Math.abs(diferencial)} extra no registrados` : 'Saldo reconciliado' }
+    const diferencial = esperado - saldoActual
+    reconciliacion = { saldo_anterior: saldoAnterior, saldo_actual: saldoActual, esperado, diferencial: Math.abs(diferencial), gastos_registrados: gastosRegistrados, ingresos_estimados: ingresosEstimados, desde_fecha: fechaAnterior, tiene_diferencial: Math.abs(diferencial) > 100, interpretacion: diferencial > 0 ? `Gastaste ~$${Math.abs(diferencial)} sin registrar desde ${fechaAnterior}` : diferencial < 0 ? `Tenes ~$${Math.abs(diferencial)} extra no registrados` : 'Saldo reconciliado' }
   }
   const catRows = query(`SELECT categoria, SUM(precio_total), COUNT(*) FROM items WHERE fecha >= ? AND categoria != '' GROUP BY categoria ORDER BY SUM(precio_total) DESC`, [fechaCorte])
   const gastosPorCategoria = catRows.map(r => ({ categoria: r[0], total: r[1], items: r[2] }))

@@ -46,6 +46,25 @@ export function loadMercadoDb() {
   return null
 }
 
+// --- Presupuesto state (guarded) ---
+// presupuesto-state.json is written by external capture scripts and
+// hand-edited by humans. A corrupt file previously JSON.parse'd bare and
+// cascaded NaN into runway/saldo. The guarded reader degrades to null and
+// callers fall back to perfil defaults.
+
+export function readPresupuestoState(statePath = PRESUPUESTO_STATE) {
+  try {
+    if (!fs.existsSync(statePath)) return null
+    const parsed = JSON.parse(fs.readFileSync(statePath, 'utf8'))
+    if (typeof parsed !== 'object' || parsed === null) return null
+    if (!Number.isFinite(Number(parsed.saldo)) || typeof parsed.saldo === 'string') return null
+    return parsed
+  } catch (e) {
+    console.warn('Finanzas presupuesto-state read failed:', e?.message)
+    return null
+  }
+}
+
 // --- Budget parser ---
 
 export function parseBudget() {
