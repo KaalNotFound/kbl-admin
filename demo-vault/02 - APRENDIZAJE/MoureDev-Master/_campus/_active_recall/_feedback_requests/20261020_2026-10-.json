@@ -1,0 +1,22 @@
+{
+  "sessionId": "2026-10-20T14:14:26.634Z",
+  "total": 2,
+  "results": [
+    {
+      "id": "doubt-0-Bubble-Sort.md-0",
+      "type": "doubt",
+      "text": "No tengo claro si el early-exit garantiza orden total o solo que una pasada no hizo swaps.",
+      "concept": "Bubble Sort",
+      "skipped": false,
+      "score": "correct"
+    },
+    {
+      "id": "doubt-1-HTTP-y-APIs.md-0",
+      "type": "doubt",
+      "text": "¿PATCH es idempotente o depende de la implementación?",
+      "concept": "HTTP verbs",
+      "skipped": false,
+      "score": "partial"
+    }
+  ]
+}

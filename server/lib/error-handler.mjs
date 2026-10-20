@@ -46,10 +46,33 @@ export async function retryWithBackoff(fn, { maxRetries = 3, baseDelay = 1000, l
  * @param {string} userMessage - User-friendly message
  * @returns {{ error: string }} Response body for res.json()
  */
+// Throttled logging: identical error signatures (route|method|path|message)
+// log the full stack ONCE; repeats log a compact summary every 10 occurrences.
+// Without this, dashboard polling against a down external service (Anki on
+// :8765, Brave CDP on :9222) floods the console with hundreds of equal stacks.
+const SUMMARY_EVERY = 10
+
+const __logThrottle = new Map() // signature -> repeat count
+
+/** Test seam: clear throttling state between test runs. */
+export function _resetLogThrottle() {
+  __logThrottle.clear()
+}
+
 export function logAndRespond(route, method, path, error, userMessage) {
-  console.error(`[${route}] ${method} ${path} failed: ${error.message}`)
-  if (error.stack && process.env.NODE_ENV !== 'production') {
-    console.error(`[${route}] Stack:`, error.stack)
+  const signature = `${route}|${method}|${path}|${error.message}`
+  const repeat = (__logThrottle.get(signature) ?? 0) + 1
+  __logThrottle.set(signature, repeat)
+
+  if (repeat === 1) {
+    console.error(`[${route}] ${method} ${path} failed: ${error.message}`)
+    if (error.stack && process.env.NODE_ENV !== 'production') {
+      console.error(`[${route}] Stack:`, error.stack)
+    }
+  } else if (repeat % SUMMARY_EVERY === 0) {
+    console.error(
+      `[${route}] ${method} ${path} failed ${repeat - 1} repeated times (${error.message}) - logs suppressed`,
+    )
   }
   return { error: userMessage || 'Error interno del servidor' }
 }

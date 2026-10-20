@@ -1,0 +1,62 @@
+{
+  "timers": [
+    {
+      "id": "tmvgrlrot0w",
+      "type": "pomodoro",
+      "label": "Focus",
+      "elapsed_ms": 0,
+      "total_ms": 1500000,
+      "state": "stopped",
+      "_pausedTotal": 0,
+      "_resumedAt": 1792505686637,
+      "_startAt": 1792505686637
+    },
+    {
+      "id": "tmvgrlv79ti",
+      "type": "pomodoro",
+      "label": "Focus",
+      "elapsed_ms": 0,
+      "total_ms": 1500000,
+      "state": "stopped",
+      "_pausedTotal": 0,
+      "_resumedAt": 1792505691189,
+      "_startAt": 1792505691189
+    },
+    {
+      "id": "tmvgrlvtak0",
+      "type": "countdown",
+      "label": "Break",
+      "elapsed_ms": 0,
+      "total_ms": 300000,
+      "state": "stopped",
+      "_pausedTotal": 0,
+      "_resumedAt": 1792505691982,
+      "_startAt": 1792505691982
+    },
+    {
+      "id": "tmvgrlxt19v",
+      "type": "pomodoro",
+      "label": "Focus",
+      "elapsed_ms": 0,
+      "total_ms": 1500000,
+      "state": "stopped",
+      "_pausedTotal": 0,
+      "_resumedAt": 1792505694565,
+      "_startAt": 1792505694565
+    },
+    {
+      "id": "tmvgrlz8lmf",
+      "type": "countdown",
+      "label": "Break",
+      "elapsed_ms": 0,
+      "total_ms": 300000,
+      "state": "stopped",
+      "_pausedTotal": 0,
+      "_resumedAt": 1792505696421,
+      "_startAt": 1792505696421
+    }
+  ],
+  "clock_visible": true,
+  "opacity": 0.85,
+  "pomodoro": null
+}
