@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import type { StudyData, SelfScore, ActiveRecallStoreStats } from '../types'
-import { submitActiveRecall, fetchActiveRecallStats, fetchActiveRecallAll, seedActiveRecallQuestions, requestStudyFeedback } from '../api'
+import { submitActiveRecall, fetchActiveRecallStats, fetchActiveRecallAll, seedActiveRecallQuestions, requestStudyFeedback, submitSelfScore } from '../api'
 
 // ─── Types ───
 
@@ -207,6 +207,29 @@ export default function ShadowStudy({ data, filter }: Props) {
 
   // ─── Actions ───
 
+  // Bridge to the Estudio→Mapa history feed: every finalized self-score must
+  // POST /api/study/self-score so it produces a Shadow Study .md note read by
+  // /api/study/history (this was wired server-side but had zero UI callers).
+  // Defended against re-triggers: the same card can be scored twice by fast
+  // clicks before React re-renders and removes the score buttons.
+  const selfScorePostedIds = useRef<Set<string>>(new Set())
+  const postSelfScore = useCallback((card: ShadowCard, score: SelfScore) => {
+    // Skips are never posted: a skip is not an evaluation of memory, while an
+    // "incorrect" on an ANSWERED card is a valid self-evaluation.
+    if (selfScorePostedIds.current.has(card.id)) return
+    selfScorePostedIds.current.add(card.id)
+    submitSelfScore({
+      questionOrDoubt: card.text,
+      type: card.type,
+      score,
+      linkedConcept: card.linkedConcept || undefined,
+    }).catch((e: unknown) => {
+      // Fire-and-forget with capture: a history-feed failure must never break
+      // the session UI. Silent console.warn is acceptable (no toast infra).
+      console.warn('[ShadowStudy] self-score submit failed:', e)
+    })
+  }, [])
+
   const advanceToNext = useCallback(() => {
     if (currentIndex + 1 >= cards.length) {
       setShowEndScreen(true)
@@ -218,6 +241,7 @@ export default function ShadowStudy({ data, filter }: Props) {
 
   const handleScore = useCallback(async (card: ShadowCard, score: SelfScore) => {
     setSessionResults(prev => { const n = new Map(prev); n.set(card.id, score); return n })
+    postSelfScore(card, score)
 
     // Save to persistent store (includes legacy fallback)
     const answer = cardAnswers.get(card.id) || flowAnswers.get(card.id)?.answer || undefined
@@ -246,7 +270,7 @@ export default function ShadowStudy({ data, filter }: Props) {
     }
     // When autoAdvance=false: score is saved, render shows "Siguiente" button
     // User clicks it to call handleFlowNext()
-  }, [autoAdvance, advanceToNext, cardAnswers, flowAnswers])
+  }, [autoAdvance, advanceToNext, cardAnswers, flowAnswers, postSelfScore])
 
   const handleFlowNext = useCallback(() => {
     setFlowPhase('question')
@@ -271,6 +295,9 @@ export default function ShadowStudy({ data, filter }: Props) {
     setRevealedIds(new Set()); setShowEndScreen(false)
     setFlowPhase('question'); setFlowAnswer('')
     setFlowAnswers(new Map()); setFeedbackStatus('idle'); setFlowAnswerStatus('idle')
+    // Re-arm the self-score bridge: a new session is a new set of evaluations,
+    // each one worth its own history entry.
+    selfScorePostedIds.current.clear()
     setCardAnswers(new Map())
   }
 
@@ -501,6 +528,8 @@ export default function ShadowStudy({ data, filter }: Props) {
     }
 
     // Active recall: skip = no sé = incorrecto (Regla 3: Fuente Zero-Trust)
+    // NOTE: no postSelfScore here — a skip records 'incorrect' internally but
+    // is not an evaluation of memory, so it must NOT create a history entry.
     const handleSkip = () => {
       setFlowAnswers(prev => {
         const n = new Map(prev)
@@ -544,6 +573,7 @@ export default function ShadowStudy({ data, filter }: Props) {
       // Save score + answer to persistent store
       const answer = flowAnswers.get(flowCard.id)?.answer || undefined
       setSessionResults(prev => { const n = new Map(prev); n.set(flowCard.id, score); return n })
+      postSelfScore(flowCard, score)
       submitActiveRecall({
         question: flowCard.text,
         type: flowCard.type,

@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { throttledErrorLog } from '../lib/error-handler.mjs'
 
 const router = Router()
 
@@ -79,7 +80,10 @@ router.get('/anki/stats', async (req, res) => {
       history: Array.isArray(history) ? history : []
     })
   } catch (e) {
-    console.error('[anki] GET /api/anki/stats failed:', e.message)
+    // Dashboard-polling route: identical failures (Anki down) would flood the
+    // console — use the shared signature-keyed throttled log. The response
+    // contract (200 + connected:false shape) is preserved exactly.
+    throttledErrorLog('anki', 'GET', '/api/anki/stats', e)
     res.json({ reviewed: 0, due: 0, total: 0, streak: 0, connected: false, decks: [], history: [] })
   }
 })

@@ -59,7 +59,16 @@ export function _resetLogThrottle() {
   __logThrottle.clear()
 }
 
-export function logAndRespond(route, method, path, error, userMessage) {
+/**
+ * Signature-keyed throttled error log. Shared by logAndRespond (returns a
+ * user-facing body) and routes whose error path builds a custom response
+ * body (e.g. anki's connected:false contract) — those need the same
+ * suppression without changing the HTTP contract.
+ *
+ * Same semantics as a5a9d8f: first occurrence logs the full message (+ stack
+ * outside production); every 10th identical repeat logs one compact summary.
+ */
+export function throttledErrorLog(route, method, path, error) {
   const signature = `${route}|${method}|${path}|${error.message}`
   const repeat = (__logThrottle.get(signature) ?? 0) + 1
   __logThrottle.set(signature, repeat)
@@ -74,5 +83,9 @@ export function logAndRespond(route, method, path, error, userMessage) {
       `[${route}] ${method} ${path} failed ${repeat - 1} repeated times (${error.message}) - logs suppressed`,
     )
   }
+}
+
+export function logAndRespond(route, method, path, error, userMessage) {
+  throttledErrorLog(route, method, path, error)
   return { error: userMessage || 'Error interno del servidor' }
 }
