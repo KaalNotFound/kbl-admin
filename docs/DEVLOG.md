@@ -3,6 +3,48 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-11-05 — Algorithms slice 1: shared frame engine + algorithm switcher (issue #2)
+
+BubbleSortVisualizer was a 560-line monolith (HEAD tally): the frame generator,
+the playback loop, bars, counters, big-O table, movement matrix and the
+pseudo-code panel lived in one component. Adding a second algorithm meant
+copying ~450 of those lines and changing the loop — the dashboard switcher was
+blocked on that copy-paste wall.
+
+Slice 1 removes the wall instead of multiplying it:
+
+- **`src/algorithms/frameTypes.js`** — one frame vocabulary every generator
+  emits (`arr`, `i/j`, `compare`, `swap`, `highlight`, `sortedFrom`, `line`,
+  `comparisonText`, running counters, `done`, Spanish `description`) plus the
+  `snap`/`finish` helpers the engines assemble frames with.
+- **`src/algorithms/{bubble,selection,insertion,heap}.js`** — one pure,
+  deterministic generator per file (no `Math.random` in the engine), each
+  exporting its own big-O/stability `*_META` (label, O-table, stability).
+  `src/algorithms/input.ts` keeps `parseArray` (bracket-optional comma/space
+  list, 1..24 integers, Spanish errors).
+- **`src/components/algorithms/SortVisualizer.tsx`** — one shared frame
+  player: seed input card, playback (step / play / pause / reset + three
+  speeds), diff-colored bars, live counters, big-O table and movement matrix.
+  `renderAside(frame)` is the extension seam — per-algorithm panels plug in
+  fed with the current frame without touching the player.
+- **`src/components/BubbleSortVisualizer.tsx`** — 560 → ~100 lines: only the
+  Bubble pseudo-code trace + execution-state aside remain, around the shared
+  player via `ALGORITHM_META.bubble`.
+- **`src/components/AlgorithmsDashboard.tsx`** — switcher with four pill tabs
+  (Bubble | Selection | Insertion | Heap); switching remounts the player so
+  playback state restarts.
+- **`server/__tests__/algorithm-generators.test.js` + `algorithm-bubble.test.js`**
+  — 19 engine tests, plus 3 `parseArray` tests: sorted-output property (known,
+  empty, single, duplicates), heap over trees of 1/8/20 with duplicates,
+  Selection exact swap contract (`[4,1,3,2]` → exactly 2 swaps; sorted input →
+  0), Bubble early exit, per-algorithm meta completeness and input parsing.
+
+Gates: suite 181 → 188 after commit A (engine extraction), → 200/200 after
+commit B (switcher + 3 more generators); `vite build` OK after each commit;
+puppeteer runtime proof: the four tabs switch (`bg-accent` on the active pill,
+asserted via computed styles) and Heap playing increases the comparisons
+counter above zero. One file per algorithm, never a second monolith.
+
 ## 2026-11-05 — Design tokens slice 1: kbl-* classes rendered correctly (issue #1)
 
 Dashboards were shipping class names Tailwind had never been taught: ~86

@@ -1,14 +1,22 @@
 import { useState } from 'react'
-import BubbleSortVisualizer from './BubbleSortVisualizer'
+import { BUBBLE_META } from '../algorithms/bubble'
+import { SELECTION_META } from '../algorithms/selection'
+import { INSERTION_META } from '../algorithms/insertion'
+import { HEAP_META } from '../algorithms/heap'
+import type { AlgorithmMeta } from '../algorithms/frameTypes'
+import SortVisualizer from './algorithms/SortVisualizer'
 
-type AlgorithmId = 'bubble'
+/**
+ * Algorithms dashboard — pill switcher over the shared SortVisualizer
+ * (issue #2, slice 1). Each algorithm module exports its own engine + meta;
+ * the panel stays a single shared implementation.
+ */
 
-const ALGORITHMS: { id: AlgorithmId; label: string; icon: string; available: boolean }[] = [
-  { id: 'bubble', label: 'Bubble Sort', icon: '🫧', available: true },
-]
+const ALGORITHMS: AlgorithmMeta[] = [BUBBLE_META, SELECTION_META, INSERTION_META, HEAP_META]
 
 export default function AlgorithmsDashboard() {
-  const [active, setActive] = useState<AlgorithmId>('bubble')
+  const [active, setActive] = useState<string>(BUBBLE_META.id)
+  const meta = ALGORITHMS.find((a) => a.id === active) ?? ALGORITHMS[0]
 
   return (
     <div>
@@ -17,23 +25,20 @@ export default function AlgorithmsDashboard() {
         {ALGORITHMS.map((algo) => (
           <button
             key={algo.id}
-            disabled={!algo.available}
             className={`py-2 px-4 rounded-md text-sm font-medium transition-all ${
               active === algo.id
                 ? 'bg-accent text-white shadow-sm'
-                : 'text-text-secondary hover:text-text-primary disabled:opacity-40 disabled:cursor-not-allowed'
+                : 'text-text-secondary hover:text-text-primary'
             }`}
             onClick={() => setActive(algo.id)}
           >
             {algo.icon} {algo.label}
           </button>
         ))}
-        <span className="ml-auto self-center px-3 text-[0.65rem] text-text-tertiary">
-          Más algoritmos próximamente
-        </span>
       </div>
 
-      {active === 'bubble' && <BubbleSortVisualizer />}
+      {/* key forces a fresh playback state when switching algorithms */}
+      <SortVisualizer key={meta.id} meta={meta} />
     </div>
   )
 }
