@@ -5,12 +5,16 @@ import { generateBubble, BUBBLE_META } from '../../src/algorithms/bubble.js'
 import { generateSelection, SELECTION_META } from '../../src/algorithms/selection.js'
 import { generateInsertion, INSERTION_META } from '../../src/algorithms/insertion.js'
 import { generateHeap, HEAP_META } from '../../src/algorithms/heap.js'
+import { generateMerge, MERGE_META } from '../../src/algorithms/merge.js'
+import { generateShell, SHELL_META } from '../../src/algorithms/shell.js'
 
 const ALL = {
   bubble: { gen: generateBubble, meta: BUBBLE_META },
   selection: { gen: generateSelection, meta: SELECTION_META },
   insertion: { gen: generateInsertion, meta: INSERTION_META },
   heap: { gen: generateHeap, meta: HEAP_META },
+  merge: { gen: generateMerge, meta: MERGE_META },
+  shell: { gen: generateShell, meta: SHELL_META },
 }
 
 function last(arr) {
@@ -25,6 +29,8 @@ describe('sort frame generators', () => {
     ['selection', generateSelection],
     ['insertion', generateInsertion],
     ['heap', generateHeap],
+    ['merge', generateMerge],
+    ['shell', generateShell],
   ])('%s: final frame array equals sorted input (known case, empty, single, duplicates)', (_name, gen) => {
     for (const input of [[5, 1, 4, 2, 8], [], [7], [3, 3, 1, 3, 2, 2], [9, -2, 5, -2]]) {
       const frames = gen(input)
@@ -55,6 +61,38 @@ describe('sort frame generators', () => {
     const end = last(frames)
     expect(end.comparisons).toBeGreaterThan(0)
     expect(end.done).toBe(true)
+  })
+
+  it('merge/shell: sort correctly on sizes 1, 8 and 20 (with duplicates)', () => {
+    const cases = [
+      [1],
+      [4, 10, 3, 5, 1, 9, 2, 8],
+      Array.from({ length: 20 }, (_, i) => 7 - (i % 5) - i),
+    ]
+    for (const input of cases) {
+      expect(last(generateMerge(input)).arr).toEqual(sorted(input))
+      expect(last(generateShell(input)).arr).toEqual(sorted(input))
+    }
+  })
+
+  it('merge/shell: pure — same seed always produces identical frames', () => {
+    const input = [5, 2, 8, 2, 1, 9, 2, 3]
+    expect(generateMerge(input)).toEqual(generateMerge(input))
+    expect(generateShell(input)).toEqual(generateShell(input))
+  })
+
+  it('merge: level + merge-range info is carried in frames', () => {
+    const frames = generateMerge([3, 1, 2])
+    const levelFrames = frames.filter((f) => f.line === 'merge')
+    expect(levelFrames.length).toBeGreaterThan(0)
+    expect(levelFrames[0].highlight.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('shell: gap sequence follows Ciura (filtered to array size) and notes the gap', () => {
+    const frames = generateShell([5, 2, 8, 1, 9, 3, 7, 2, 6, 4])
+    const gapLines = frames.filter((f) => f.line === 'gap')
+    expect(gapLines.length).toBe(2) // n=10 → Ciura gaps [4, 1]
+    expect(gapLines.every((f) => /gap/i.test(f.description))).toBe(true)
   })
 
   it('bubble: early exit on already-sorted input (one pass, no swaps)', () => {

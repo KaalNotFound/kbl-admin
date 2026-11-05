@@ -3,6 +3,49 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-11-05 — Algorithms slice 2: Merge Sort + Shell Sort visualizers (issue #2)
+
+Slice 2 of 3 of the sort-algorithms module: two more frame engines behind the
+shared `SortVisualizer`, zero changes to the visualizer itself.
+
+**What was added:**
+
+- `src/algorithms/merge.js` — Merge Sort as an **iterative bottom-up** merge
+  (width 1 → 2 → 4…). Per the slice-1 constraint (no tree view), merge levels
+  are represented with grouped highlights: each `merge` frame highlights both
+  ranges being fused (`highlight = [lo..mid) + [mid..hi)`), announces the
+  width in a `split` frame, and confirms each fused run in a `merged` frame.
+  Counter semantics: `comparisons` per element comparison, `swaps` per write
+  to the aux output (monotonic, matching counters elsewhere). Meta:
+  O(n log n) all cases, O(n) space, **stable**.
+- `src/algorithms/shell.js` — Shell Sort using the **Ciura gap sequence**
+  (`[1750, 701, 301, 132, 57, 23, 10, 4, 1]`, filtered `g < n`; the app caps
+  input at 24 items so no extension-by-series is needed). Each pass announces
+  its stride in a `gap` frame, then plays a gapped insertion sort whose
+  `compare`/`shift` frames reuse the insertion-style fields; shifts count as
+  swaps. Meta: best O(n log n), avg marked "depends on the gap sequence", worst
+  O(n²), O(1) space, **unstable** (honest: Ciura's average bound is not proven).
+- `AlgorithmsDashboard.tsx`: two new pills — 🔀 Merge Sort, 🐚 Shell Sort —
+  now six tabs, still one shared mount of SortVisualizer.
+
+**Notably NOT changed:**
+
+- `SortVisualizer.tsx` untouched: the existing frame vocabulary from
+  `frameTypes.js` (compare/swap/highlight/line/comparisonText) carries all
+  the new information, so the build stayed a pure engine addition.
+
+**Verification:**
+
+- `server/__tests__/algorithm-generators.test.js` extended (TDD: RED first —
+  suite failed on the missing module import). Merge + shell join the shared
+  property tests (sorted output for 5 known cases, vocabulary, counters),
+  size 1/8/20 cases with duplicates, a purity check (same seed → identical
+  frames), a merge-range highlight test, and a Ciura gap-sequence test.
+- Full suite: **208/208** (200 baseline + 8 new). `vite build` OK.
+- Puppeteer runtime proof (ports 3007/5177): six pills clicked, each active
+  pill computed `bg-accent`; Merge play advanced the comparisons counter;
+  screenshots at `/tmp/opencode/algo2-{merge,shell}.png`.
+
 ## 2026-11-05 — Algorithms slice 1: shared frame engine + algorithm switcher (issue #2)
 
 BubbleSortVisualizer was a 560-line monolith (HEAD tally): the frame generator,
