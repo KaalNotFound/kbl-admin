@@ -3,6 +3,40 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-11-05 — Design tokens slice 1: kbl-* classes rendered correctly (issue #1)
+
+Dashboards were shipping class names Tailwind had never been taught: ~86
+`text-/bg-/border-/from-/to-kbl-*` references, `text-gradient-green/blue`,
+`animate-card-enter`, `animate-glow-pulse`, `animate-hero-shimmer` plus
+invalid-default `scale-130` and `duration-600`. Undefined utilities don't error
+— they silently no-op, so severity dots rendered transparent and error text
+fell back to whatever color the parent happened to have (measured inherit:
+`rgb(224,160,160)` instead of the danger token).
+
+Slice 1 (made existing classes render, no hex migration yet):
+
+- **`tailwind.config.js`** — `colors.kbl.*` maps every used legacy name onto
+  existing semantic CSS vars (`kbl-red→--danger`, `kbl-amber→--warning`,
+  `kbl-green→--positive`, `kbl-blue→--accent`, `kbl-blue-dark→--accent-alt`;
+  semantics verified against the Vault Doctor severity map: red=error,
+  amber=warn, green=ok). Added `cardEnter`, `glowPulse` (2.4s subtle opacity
+  pulse), `heroShimmer` (3s background-position sweep) keyframes/animations,
+  `scale: 130` (1.3) and `transitionDuration: 600` (600ms).
+- **`src/index.css`** — `@layer utilities` `.text-gradient-green/.text-gradient-blue`
+  (gradient over `--positive`/`--accent` + `--accent-alt`, `background-size:200%`
+  so `animate-hero-shimmer` has room to sweep, theme-safe via vars).
+- **`server/__tests__/design-tokens.test.js` (NEW)** — contract test scanning
+  live src for `kbl-*`, `animate-*` and `text-gradient-*` usage: every used
+  name must exist in the config/`index.css`, and every `kbl-*` mapping must
+  point to a CSS var that actually exists in `:root`. Self-updating coverage
+  (unknown future kbl-* usage fails the suite). TDD: RED 1/4 → GREEN 4/4.
+
+Gates: suite 177 → 181/181, `vite build` OK, puppeteer computed-style proof
+(before: inherited `rgb(224,160,160)` → after: `rgb(192,57,43)` for
+`text-kbl-red`; `bg-kbl-green` dots previously no-op now `rgb(46,139,87)`),
+rendered CSS verified to contain the `bg-kbl-red`/`text-gradient-blue`
+/`glowPulse` rules. Slice 2 (issue #1): migrate ~200 hardcoded hex values.
+
 ## 2026-10-20 — Phase 5: Vault Doctor — validating the vault the tolerant parser silently swallows
 
 The reformalization audit's verdict on the finanzas layer was "robust against

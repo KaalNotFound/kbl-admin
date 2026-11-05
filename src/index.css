@@ -93,6 +93,25 @@ body {
   background-clip: text;
 }
 
+@layer utilities {
+  /* Gradient headline text over the theme's positive/accent tokens.
+     background-size is 200% so animate-hero-shimmer can sweep it. */
+  .text-gradient-green {
+    background: linear-gradient(135deg, rgb(var(--positive)) 0%, rgb(var(--positive)) 50%, rgb(var(--accent-alt)) 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-blue {
+    background: linear-gradient(135deg, rgb(var(--accent)) 0%, rgb(var(--accent)) 50%, rgb(var(--accent-alt)) 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
