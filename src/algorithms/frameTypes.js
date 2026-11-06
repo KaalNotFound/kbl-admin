@@ -42,6 +42,7 @@
  * @property {(arr: number[]) => SortFrame[]} build
  * @property {{best: string, avg: string, worst: string, space: string}} bigO
  * @property {boolean} stable
+ * @property {boolean} [nonNegative] — true when the algorithm needs non-negative integers (counting/radix)
  */
 
 export function frame(arr, extra) {

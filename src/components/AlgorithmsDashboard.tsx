@@ -5,6 +5,8 @@ import { INSERTION_META } from '../algorithms/insertion'
 import { HEAP_META } from '../algorithms/heap'
 import { MERGE_META } from '../algorithms/merge'
 import { SHELL_META } from '../algorithms/shell'
+import { COUNTING_META } from '../algorithms/counting'
+import { RADIX_META } from '../algorithms/radix'
 import type { AlgorithmMeta } from '../algorithms/frameTypes'
 import SortVisualizer from './algorithms/SortVisualizer'
 
@@ -14,7 +16,7 @@ import SortVisualizer from './algorithms/SortVisualizer'
  * the panel stays a single shared implementation.
  */
 
-const ALGORITHMS: AlgorithmMeta[] = [BUBBLE_META, SELECTION_META, INSERTION_META, HEAP_META, MERGE_META, SHELL_META]
+const ALGORITHMS: AlgorithmMeta[] = [BUBBLE_META, SELECTION_META, INSERTION_META, HEAP_META, MERGE_META, SHELL_META, COUNTING_META, RADIX_META]
 
 export default function AlgorithmsDashboard() {
   const [active, setActive] = useState<string>(BUBBLE_META.id)

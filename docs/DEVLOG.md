@@ -789,3 +789,44 @@ crashed with `ENOENT` at import time). Two contract test suites
 
 **Env surface added** (documented in `.env.example`): `KBL_DATA_DIR`,
 `MASTERY_STORE_PATH`, `ACTIVE_RECALL_STORE_PATH`.
+
+## 2026-11-06 — Algorithms slice 3: non-comparison sorts (Counting + Radix) complete the switcher (TDD)
+
+Issue: KaalNotFound/kbl-admin#2 (final slice). Branch: `feat/algorithms-counting-radix`.
+
+**What:**
+
+- `src/algorithms/counting.js`: Counting Sort frame engine with a genuinely
+  different visual contract — phase 1 ("cuenta fase") swaps the render array
+  for the BINS view (k = max+1 bars, one per value) while a note names the
+  input value being counted; phase 2 ("colocación") rebuilds the array
+  left-to-right by walking the bins in value order. `comparisons` counts reads
+  (n), `swaps` counts placements (n) — reused counters, no UI changes needed.
+- `src/algorithms/radix.js`: LSD Radix Sort base 10, one announced pass per
+  decimal digit (`digit-pass`), per-read digit frames
+  (`dígito <unidades/decenas/centenas> de valor v = k → cubeta k`), then
+  stable bucket collection frames. Digit count derives from the max value.
+- `AlgorithmsDashboard`: two new tabs — '🔢 Counting Sort', '🌌 Radix Sort'
+  (8 total). Meta cards render via the existing machinery.
+- `SortVisualizer`: a minimal `nonNegative` meta guard (~8 lines) rejects
+  negative input for counting/radix with a clean Spanish error, instead of
+  generating broken frames. `frameTypes` AlgorithmMeta typedef documents the
+  optional flag. Zero changes to the bars/controls rendering — the phase
+  labels ride entirely on existing `line`/`description`/`comparisonText`.
+
+**Behavior decision (negatives/floats):** `parseArray` already rejects floats
+("no es un número entero"). Negatives remain valid for comparison sorts, so
+instead of a global restriction the two non-comparison metas declare
+`nonNegative: true` and the shared player enforces it per-algorithm at
+generation time. Covered by a test.
+
+**Gates:** suite 208 → 225/225 green (17 new, `server/__tests__/counting-radix.test.js`:
+final frame equals integer-sorted input for sizes 1/8/20 incl. duplicates,
+zeros and 0..999; cuenta/digit frames present; counters sane; purity;
+nonNegative decision). `npx vite build` OK.
+
+**Runtime proof** (puppeteer-core + /usr/bin/chromium --no-sandbox, API on
+PORT=3007 + vite on 5177 via `VITE_API_PORT`; ports killed afterwards):
+all 8 tabs switch with `bg-accent` on the active pill; play → "Algoritmo
+terminado" with comparaciones=5 / intercambios=5 > 0 on both new algorithms.
+Screenshots: `/tmp/opencode/algo3-counting.png`, `/tmp/opencode/algo3-radix.png`.

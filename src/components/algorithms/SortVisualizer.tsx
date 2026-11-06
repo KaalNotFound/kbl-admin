@@ -70,8 +70,28 @@ export default function SortVisualizer({ meta, renderAside }: SortVisualizerProp
       setError(err ?? 'Entrada inválida.')
       return
     }
+    const guardErr = guardNonNegative(values)
+    if (guardErr) {
+      setError(guardErr)
+      return
+    }
     applyArray(values)
-  }, [inputText, applyArray])
+  }, [inputText, applyArray, meta])
+
+  // Counting/radix build bins or digit buckets indexed by the value itself, so
+  // negative values have no meaning there. Decision (issue #2, slice 3):
+  // reject negatives at input time with a clean UI error rather than emitting
+  // broken frames. parseArray already rejects floats ("no es un número entero").
+  const guardNonNegative = useCallback(
+    (values: number[]): string | null => {
+      if (!('nonNegative' in meta) || !meta.nonNegative) return null
+      const neg = values.filter((v) => v < 0)
+      return neg.length > 0
+        ? `${meta.label} requiere enteros no negativos: ${neg.slice(0, 3).join(', ')}${neg.length > 3 ? '…' : ''}`
+        : null
+    },
+    [meta]
+  )
 
   const handleShuffle = useCallback(() => {
     const size = array.length > 0 ? array.length : 5
