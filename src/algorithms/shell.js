@@ -8,6 +8,19 @@ export const SHELL_META = {
   build: generateShell,
   bigO: { best: 'O(n log n)', avg: 'depende del gap', worst: 'O(n²)', space: 'O(1)' },
   stable: false,
+  pseudocode: {
+    lines: [
+      'for gap in Ciura:  # 1750, 701, 301, …, 4, 1',
+      '    for i in range(gap, n):',
+      '        tmp = arr[i]',
+      '        j = i',
+      '        while j >= gap and arr[j - gap] > tmp:',
+      '            arr[j] = arr[j - gap]',
+      '            j = j - gap',
+      '        arr[j] = tmp',
+    ],
+    mapping: { outer: 0, gap: 1, compare: 4, shift: 5, place: 7, done: null },
+  },
 }
 
 /** Ciura sequence; arrays capped at 24 items so no extension is needed. */

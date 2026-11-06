@@ -3,6 +3,37 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-11-06 — Algorithms: pseudo-code execution panel on all 8 tabs (issue #2 stretch)
+
+The "Punto de ejecución" pseudo-code trace was Bubble-only; now every
+visualizer tab shows it.
+
+- `src/components/algorithms/PseudoCodePanel.tsx` (new): shared panel,
+  same visual design as the old Bubble-only CodeTracePanel (bg-card card,
+  mono `pre`, padded line numbers, bg-accent-light row highlight).
+- All 8 `src/algorithms/*.js` metas gained a `pseudocode` block: python-like
+  `lines` faithful to the real loops plus a `mapping` from each `frame.line`
+  key to the highlighted row (null for terminal frames). Counting shows the
+  count + placement phases; radix shows per-digit bucket passes with stable
+  collection. `frameTypes` documents the typedef.
+- `SortVisualizer`: when `meta.pseudocode` exists it renders the shared
+  panel last in the aside, with `activeIndex = mapping[frame.line] ?? null`.
+  Per-algorithm `renderAside` panels still compose before it.
+- `BubbleSortVisualizer`: local CodeTracePanel/CODE_LINES/LINE_TO_CODE
+  removed (redundant); only the Bubble ExecutionStatePanel remains in
+  `renderAside`.
+
+**Gates:** suite 225 → 228/228 green (3 new tests in
+`server/__tests__/pseudocode.test.js`: non-empty lines for all 8 metas,
+mapping coverage of every `frame.line` emitted by each generator on a sample
+array, mapping values in row range or null). `npx vite build` OK.
+
+**Runtime proof** (PORT=3007 + vite 5177, killed afterwards): on Bubble,
+two "Siguiente paso" clicks move the highlight row 1 → 5 while stepping;
+on every other tab the "Punto de ejecución" panel renders with non-empty
+code. Screenshots: `/tmp/opencode/ps-{bubble,selection,insertion,heap,merge,
+shell,counting,radix}.png`.
+
 ## 2026-11-05 — Algorithms slice 2: Merge Sort + Shell Sort visualizers (issue #2)
 
 Slice 2 of 3 of the sort-algorithms module: two more frame engines behind the

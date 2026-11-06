@@ -8,6 +8,18 @@ export const INSERTION_META = {
   build: generateInsertion,
   bigO: { best: 'O(n)', avg: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
   stable: true,
+  pseudocode: {
+    lines: [
+      'for i in range(1, n):',
+      '    key = arr[i]',
+      '    j = i - 1',
+      '    while j >= 0 and arr[j] > key:',
+      '        arr[j + 1] = arr[j]',
+      '        j = j - 1',
+      '    arr[j + 1] = key  # inserción',
+    ],
+    mapping: { outer: 0, pick: 1, compare: 3, shift: 4, place: 6, done: null },
+  },
 }
 
 /** Insertion Sort: grows a sorted prefix; shifts count as swaps. */

@@ -8,6 +8,17 @@ export const SELECTION_META = {
   build: generateSelection,
   bigO: { best: 'O(n²)', avg: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
   stable: false,
+  pseudocode: {
+    lines: [
+      'for i in range(n):',
+      '    min_idx = i',
+      '    for j in range(i + 1, n):',
+      '        if arr[j] < arr[min_idx]:',
+      '            min_idx = j',
+      '    arr[i], arr[min_idx] = arr[min_idx], arr[i]  # intercambio',
+    ],
+    mapping: { outer: 0, compare: 3, swap: 5, 'in-place': 3, done: null },
+  },
 }
 
 /** Selection Sort: one swap per pass (only when the min is not already in place). */

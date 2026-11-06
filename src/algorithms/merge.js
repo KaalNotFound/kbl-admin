@@ -8,6 +8,15 @@ export const MERGE_META = {
   build: generateMerge,
   bigO: { best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)', space: 'O(n)' },
   stable: true,
+  pseudocode: {
+    lines: [
+      'for width in 1, 2, 4, … < n:',
+      '    for lo in range(0, n - width, 2 * width):',
+      '        merge(arr, lo, lo + width, min(lo + 2*width, n))  # fusion',
+      '    width = width * 2',
+    ],
+    mapping: { outer: 0, split: 1, merge: 2, merged: 2, done: null },
+  },
 }
 
 /**

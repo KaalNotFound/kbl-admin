@@ -8,6 +8,16 @@ export const HEAP_META = {
   build: generateHeap,
   bigO: { best: 'O(n log n)', avg: 'O(n log n)', worst: 'O(n log n)', space: 'O(1)' },
   stable: false,
+  pseudocode: {
+    lines: [
+      'for i in range(n // 2 - 1, -1, -1):',
+      '    heapify(arr, n, i)  # construir max-heap',
+      'for i in range(n - 1, 0, -1):',
+      '    arr[0], arr[i] = arr[i], arr[0]  # extraer máximo',
+      '    heapify(arr, i, 0)',
+    ],
+    mapping: { outer: 0, heapify: 1, 'heapify-swap': 1, 'heapify-done': 1, 'heap-built': 2, extract: 3, done: null },
+  },
 }
 
 /** Heap Sort: build max-heap, then swap root↔tail and sift down (in place). */

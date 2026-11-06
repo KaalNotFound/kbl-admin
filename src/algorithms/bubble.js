@@ -8,6 +8,21 @@ export const BUBBLE_META = {
   build: generateBubble,
   bigO: { best: 'O(n)', avg: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
   stable: true,
+  // Pseudo-code trace for the shared execution point panel (moved from the
+  // old Bubble-only CodeTracePanel; frame.line → highlighted row).
+  pseudocode: {
+    lines: [
+      'for i in range(n - 1):',
+      '    swapped = False',
+      '    for j in range(0, n - i - 1):',
+      '        if arr[j] > arr[j + 1]:',
+      '            arr[j], arr[j + 1] = arr[j + 1], arr[j]  # intercambio',
+      '            swapped = True',
+      '    if not swapped:',
+      '        break',
+    ],
+    mapping: { outer: 0, compare: 3, swap: 4, 'pass-end': 6, break: 6, done: null },
+  },
 }
 
 /** Bubble Sort with early exit (extracted from BubbleSortVisualizer.buildTrace). */

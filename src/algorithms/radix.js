@@ -8,6 +8,17 @@ export const RADIX_META = {
   build: generateRadix,
   bigO: { best: 'O(d×(n+b))', avg: 'O(d×(n+b))', worst: 'O(d×(n+b))', space: 'O(n+b)' },
   stable: true,
+  pseudocode: {
+    lines: [
+      'for d in 1 … número de dígitos del máximo:',
+      '    buckets = [[], [], … ]  # 10 cubetas',
+      '    for v in arr:',
+      '        digit = (v // 10**d) % 10',
+      '        buckets[digit].append(v)',
+      '    arr = concatenar(buckets)  # estable',
+    ],
+    mapping: { outer: 0, 'digit-pass': 1, digit: 2, place: 5, done: null },
+  },
   // non-negative integers only: digit extraction assumes unsigned values.
   // SortVisualizer rejects negatives at parse time via this flag.
   nonNegative: true,

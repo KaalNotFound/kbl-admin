@@ -8,6 +8,20 @@ export const COUNTING_META = {
   build: generateCounting,
   bigO: { best: 'O(n+k)', avg: 'O(n+k)', worst: 'O(n+k)', space: 'O(k)' },
   stable: true,
+  pseudocode: {
+    lines: [
+      'max = max(arr)',
+      'count = [0] * (max + 1)',
+      'for v in arr:',
+      '    count[v] += 1  # fase de conteo',
+      'pos = 0',
+      'for v in range(max + 1):',
+      '    for _ in range(count[v]):',
+      '        out[pos] = v  # fase de colocación',
+      '        pos += 1',
+    ],
+    mapping: { outer: 0, count: 3, place: 7, done: null },
+  },
   // non-negative integers only: bins indexed by value are undefined for
   // negatives. SortVisualizer rejects such input at parse time.
   nonNegative: true,

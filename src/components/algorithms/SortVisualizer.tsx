@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { parseArray } from '../../algorithms/input'
 import type { AlgorithmMeta, SortFrame } from '../../algorithms/frameTypes'
+import PseudoCodePanel from './PseudoCodePanel'
 
 /**
  * Shared frame player for every sort algorithm (issue #2, slice 1).
@@ -291,6 +292,14 @@ export default function SortVisualizer({ meta, renderAside }: SortVisualizerProp
         </div>
 
         {renderAside && <div className="w-full lg:w-[360px] max-lg:flex-1 min-w-[300px] space-y-4">{renderAside(step)}</div>}
+        {meta.pseudocode && (
+          <div className="w-full lg:w-[300px] max-lg:flex-1 min-w-[280px]">
+            <PseudoCodePanel
+              pseudocode={meta.pseudocode}
+              activeIndex={meta.pseudocode.mapping[step.line] ?? null}
+            />
+          </div>
+        )}
       </div>
 
       {/* Movement matrix */}

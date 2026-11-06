@@ -33,6 +33,13 @@
  */
 
 /**
+ * Pseudo-code trace for the shared execution point panel.
+ * @typedef {Object} PseudocodeMeta
+ * @property {string[]} lines
+ * @property {Record<string, number | null>} mapping — frame.line → highlighted row (null = no highlight)
+ */
+
+/**
  * Metadata every algorithm module exports so SwitchVisualizer/AlgorithmsDashboard
  * can render it generically.
  * @typedef {Object} AlgorithmMeta
@@ -42,6 +49,7 @@
  * @property {(arr: number[]) => SortFrame[]} build
  * @property {{best: string, avg: string, worst: string, space: string}} bigO
  * @property {boolean} stable
+ * @property {PseudocodeMeta} [pseudocode] — enables the shared execution point panel in SortVisualizer
  * @property {boolean} [nonNegative] — true when the algorithm needs non-negative integers (counting/radix)
  */
 
