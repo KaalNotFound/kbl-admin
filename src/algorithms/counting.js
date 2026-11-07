@@ -25,6 +25,9 @@ export const COUNTING_META = {
   // non-negative integers only: bins indexed by value are undefined for
   // negatives. SortVisualizer rejects such input at parse time.
   nonNegative: true,
+  // This engine counts reads and placements instead of comparisons of pairs:
+  // the didactic counters card relabels them via these optional names.
+  counterLabels: { comparisons: 'Lecturas', swaps: 'Colocaciones' },
 }
 
 /**

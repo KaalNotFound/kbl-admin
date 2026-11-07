@@ -7,9 +7,11 @@ import PseudoCodePanel from './PseudoCodePanel'
 /**
  * Shared frame player for every sort algorithm (issue #2, slice 1).
  * Owns the seed array + playback state and renders the input card, bars,
- * controls, live counters, big-O table and movement matrix from ONE
- * implementation. `renderAside` lets a specific algorithm inject its own
- * panel (e.g. the Bubble pseudo-code trace) fed with the current frame.
+ * guided counters, pseudo-code execution point, big-O table and movement
+ * matrix from ONE implementation. The main row shows the visualization and
+ * the execution point side by side; `renderAside` lets a specific algorithm
+ * inject its own extra panel (e.g. the Bubble state trace) fed with the
+ * current frame.
  */
 
 type Speed = 'slow' | 'normal' | 'fast'
@@ -108,6 +110,15 @@ export default function SortVisualizer({ meta, renderAside }: SortVisualizerProp
   // Executed rows for the movement matrix (skips the initial snapshot).
   const executedRows = useMemo(() => frames.slice(1, safeIndex + 1), [frames, safeIndex])
 
+  // Optional per-algorithm counter labels (counting/radix count reads and
+  // placements instead of comparisons and swaps).
+  const counterLabels =
+    'counterLabels' in meta
+      ? (meta as AlgorithmMeta & { counterLabels?: { comparisons?: string; swaps?: string } }).counterLabels
+      : undefined
+  const comparisonLabel = counterLabels?.comparisons ?? 'Comparaciones hechas'
+  const swapLabel = counterLabels?.swaps ?? 'Vecinos intercambiados'
+
   return (
     <div className="space-y-5">
       {/* Seed array input */}
@@ -194,9 +205,11 @@ export default function SortVisualizer({ meta, renderAside }: SortVisualizerProp
         </div>
       </div>
 
-      {/* Bars + per-algorithm aside */}
+      {/* Main row: visualization (left, ~55%) + execution point pseudo-code (right, ~45%).
+          Both cards grow naturally; the pseudo-code panel shows its 9-line maximum
+          without any internal vertical scroll. */}
       <div className="flex flex-wrap gap-5">
-        <div className="flex-1 min-w-[320px] bg-card rounded-xl p-4">
+        <div className="flex-[55] min-w-[320px] bg-card rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-text-primary">Visualización</h3>
             <div className="flex flex-wrap gap-3 text-[0.6rem] text-text-secondary">
@@ -250,19 +263,53 @@ export default function SortVisualizer({ meta, renderAside }: SortVisualizerProp
           )}
         </div>
 
-        {/* Live counters + big-O table */}
-        <div className="w-full lg:w-[300px] max-lg:flex-1 min-w-[280px] bg-card rounded-xl p-4 space-y-4">
+        {meta.pseudocode && (
+          <div className="flex-[45] min-w-[300px]">
+            <PseudoCodePanel
+              pseudocode={meta.pseudocode}
+              activeIndex={meta.pseudocode.mapping[step.line] ?? null}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Secondary row: guided counters + big-O table (left) + per-algorithm aside (right) */}
+      <div className="flex flex-wrap gap-5">
+        <div className="flex-1 min-w-[280px] bg-card rounded-xl p-4 space-y-4">
           <div>
-            <h3 className="text-sm font-semibold text-text-primary mb-3">Contadores en vivo</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="metric-box py-2 px-3">
-                <p className="text-[0.6rem] text-text-secondary">comparaciones</p>
-                <p className="text-sm font-semibold tabular-nums text-text-primary">{step.comparisons}</p>
+            <h3 className="text-sm font-semibold text-text-primary mb-3">
+              Contadores del algoritmo — guía didáctica
+            </h3>
+            <div className="space-y-2">
+              <div
+                className="metric-box py-2 px-3 flex items-center justify-between gap-3"
+                title={
+                  counterLabels
+                    ? 'Cada valor se lee del array para contarlo o clasificarlo. Los algoritmos que no comparan valores pagan su costo así: lecturas y colocaciones en lugar de comparaciones.'
+                    : 'Comparar es decidir entre dos valores cuál es mayor. Cada pregunta del tipo "¿if arr[j] > arr[j+1]?" en el Punto de ejecución suma 1 acá: es la operación dominante y por eso crece hacia O(n²) en los algoritmos por comparación.'
+                }
+              >
+                <p className="text-[0.6rem] text-text-secondary">{comparisonLabel}</p>
+                <p className="text-base font-semibold tabular-nums text-text-primary">{step.comparisons}</p>
               </div>
-              <div className="metric-box py-2 px-3">
-                <p className="text-[0.6rem] text-text-secondary">intercambios</p>
-                <p className="text-sm font-semibold tabular-nums text-text-primary">{step.swaps}</p>
+              <div
+                className="metric-box py-2 px-3 flex items-center justify-between gap-3"
+                title={
+                  counterLabels
+                    ? 'Colocar es mover un valor a su posición definitiva en el array de salida. Este contador suma 1 por cada escritura, al mismo ritmo que la línea resaltada del Punto de ejecución.'
+                    : 'Intercambiar es mover físicamente dos valores a los lugares opuestos del array. Cada vez que las barras se pintan en rojo este número suma 1, al mismo ritmo que la línea resaltada del Punto de ejecución.'
+                }
+              >
+                <p className="text-[0.6rem] text-text-secondary">{swapLabel}</p>
+                <p className="text-base font-semibold tabular-nums text-text-primary">{step.swaps}</p>
               </div>
+              <p className="text-[0.65rem] text-text-tertiary leading-relaxed">
+                Estos números avanzan en pasos sincronizados con el algoritmo: cada incremento corresponde a la línea
+                resaltada del 'Punto de ejecución', a los cambios de color en las barras y explica el costo que resume
+                la tarjeta Big-O. En los ordenamientos por comparación las comparaciones crecen con O(n²); los que no
+                comparan (counting, radix) renuncian a preguntar qué es mayor y pagan con lecturas y colocaciones, que
+                es justamente lo que medimos acá.
+              </p>
             </div>
           </div>
 
@@ -291,15 +338,7 @@ export default function SortVisualizer({ meta, renderAside }: SortVisualizerProp
           </div>
         </div>
 
-        {renderAside && <div className="w-full lg:w-[360px] max-lg:flex-1 min-w-[300px] space-y-4">{renderAside(step)}</div>}
-        {meta.pseudocode && (
-          <div className="w-full lg:w-[300px] max-lg:flex-1 min-w-[280px]">
-            <PseudoCodePanel
-              pseudocode={meta.pseudocode}
-              activeIndex={meta.pseudocode.mapping[step.line] ?? null}
-            />
-          </div>
-        )}
+        {renderAside && <div className="flex-1 min-w-[300px] space-y-4">{renderAside(step)}</div>}
       </div>
 
       {/* Movement matrix */}

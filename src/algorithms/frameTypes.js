@@ -51,6 +51,7 @@
  * @property {boolean} stable
  * @property {PseudocodeMeta} [pseudocode] — enables the shared execution point panel in SortVisualizer
  * @property {boolean} [nonNegative] — true when the algorithm needs non-negative integers (counting/radix)
+ * @property {{comparisons?: string, swaps?: string}} [counterLabels] — overrides the didactic counters card labels (e.g. lecturas/colocaciones)
  */
 
 export function frame(arr, extra) {

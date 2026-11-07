@@ -861,3 +861,30 @@ PORT=3007 + vite on 5177 via `VITE_API_PORT`; ports killed afterwards):
 all 8 tabs switch with `bg-accent` on the active pill; play → "Algoritmo
 terminado" with comparaciones=5 / intercambios=5 > 0 on both new algorithms.
 Screenshots: `/tmp/opencode/algo3-counting.png`, `/tmp/opencode/algo3-radix.png`.
+
+### Visualizer layout: side-by-side execution point + didactic counters
+
+**Status:** complete (layout feedback round)
+
+**Layout.** `SortVisualizer` main row is now two cards side by side:
+`Visualización` (left, `flex-[55]`) and `Punto de ejecución` (right,
+`flex-[45]`). The pseudo-code panel grows naturally — no vertical scroll even
+for the tallest 9-line code (counting.js). The didactic counters card, the
+per-algorithm aside panel and the big-O table moved to a secondary row below.
+
+**Didactic counters.** `Contadores en vivo` became `Contadores del algoritmo —
+guía didáctica`: the two values stay visible with `tabular-nums`, each row
+carries a tooltip that defines the metric ("comparar dos valores para decidir
+cuál es mayor", "mover valores físicamente") and a paragraph explains that each
+increment happens in lock-step with the highlighted code line, the bar colors
+and the Big-O summary — and why comparison sorts pay in comparisons (O(n²))
+while counting/radix pay in reads/placements. Optional `counterLabels` on
+`AlgorithmMeta` relabels the two rows to `Lecturas` / `Colocaciones` for the
+non-comparison sorts.
+
+**Verification.** Suite 228/228, `vite build` OK. Puppeteer probes: at 1440px
+and 800px the two cards share the same row (`sideBySide: true`), pseudo panel
+`scrollHeight <= clientHeight` (no vertical scroll), all 8 tabs render a
+non-empty execution point (4–9 lines). After 3 "Siguiente paso" clicks the
+bubble counters read comparaciones=2 / intercambios=1; radix shows
+lecturas=2 / colocaciones=0 mid-run.

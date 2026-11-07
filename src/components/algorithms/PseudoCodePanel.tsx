@@ -15,7 +15,7 @@ export default function PseudoCodePanel({ pseudocode, activeIndex }: PseudoCodeP
   return (
     <div className="bg-card rounded-xl p-4">
       <h3 className="text-sm font-semibold text-text-primary mb-3">Punto de ejecución</h3>
-      <pre className="mono text-[0.7rem] leading-relaxed overflow-x-auto">
+      <pre className="mono text-[0.7rem] leading-relaxed overflow-x-auto whitespace-pre">
         {pseudocode.lines.map((line, idx) => (
           <div
             key={idx}

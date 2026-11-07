@@ -22,6 +22,9 @@ export const RADIX_META = {
   // non-negative integers only: digit extraction assumes unsigned values.
   // SortVisualizer rejects negatives at parse time via this flag.
   nonNegative: true,
+  // Optional didactic counter labels: radix counts reads and placements
+  // across bucket passes, not comparisons between pairs.
+  counterLabels: { comparisons: 'Lecturas', swaps: 'Colocaciones' },
 }
 
 const DIGIT_NAMES = ['unidades', 'decenas', 'centenas', 'millares', 'diez-millares', 'cien-millares']
