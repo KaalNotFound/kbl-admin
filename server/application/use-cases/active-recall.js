@@ -15,6 +15,14 @@
  * la validación y el Result pattern.
  */
 
+import { resolveWithinRoot } from '../../lib/path-guard.mjs'
+
+const MAX_BATCH_QUESTIONS = 500
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
 export function createActiveRecallUseCases({ store, defaultIngestDir }) {
   /**
    * POST /active-recall/review
@@ -92,7 +100,12 @@ export function createActiveRecallUseCases({ store, defaultIngestDir }) {
 
   /** POST /active-recall/ingest — backfill from vault _active_recall/ notes. */
   async function ingest(dir) {
-    return { ok: true, value: store.ingestFromActiveRecall(dir || defaultIngestDir) };
+    const target = dir || defaultIngestDir;
+    const guard = resolveWithinRoot(defaultIngestDir, target);
+    if (!guard.ok) {
+      return { status: 400, error: 'Directorio de importación fuera del vault permitido.' };
+    }
+    return { ok: true, value: store.ingestFromActiveRecall(guard.path) };
   }
 
   /** POST /active-recall/seed — { questions: [...] } → { seeded } */
@@ -100,11 +113,20 @@ export function createActiveRecallUseCases({ store, defaultIngestDir }) {
     if (!Array.isArray(payload.questions)) {
       return { status: 400, error: 'questions array is required' };
     }
+    if (payload.questions.length > MAX_BATCH_QUESTIONS) {
+      return { status: 400, error: 'Máximo 500 preguntas por lote.' };
+    }
+    if (!payload.questions.every(isPlainObject)) {
+      return { status: 400, error: 'Cada pregunta debe ser un objeto válido.' };
+    }
     return { ok: true, value: { seeded: store.seedQuestions(payload.questions) } };
   }
 
   /** POST /active-recall/inject — single-question variant of seed. */
   async function inject(payload = {}) {
+    if (!isPlainObject(payload)) {
+      return { status: 400, error: 'La pregunta debe ser un objeto válido.' };
+    }
     if (!payload.question) return { status: 400, error: 'question is required' };
     return { ok: true, value: { seeded: store.seedQuestions([payload]) } };
   }

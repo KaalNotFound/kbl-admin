@@ -3,6 +3,30 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-11-08 — Security perimeter slice 2 (issue #3)
+
+Contained filesystem ingest and capped request payloads.
+
+- New `server/lib/path-guard.mjs` `resolveWithinRoot(root, candidate)`:
+  resolves both paths with `realpathSync.native` (walking up to the nearest
+  existing ancestor when the target does not exist yet) and only accepts paths
+  equal to the root or prefixed by `root + sep`. Rejects `..` escapes,
+  absolute paths outside the root and symlinks pointing outside. Never throws.
+- `POST /active-recall/ingest` now validates `body.dir` against the injected
+  `defaultIngestDir` (`vaultFs.ACTIVE_RECALL_DIR`) before calling the store;
+  outside → 400 `Directorio de importación fuera del vault permitido.` The
+  route propagates that status.
+- `seed`/`inject` cap batches at 500 questions and reject non-object entries.
+- `ingestFromActiveRecall` caps recursion at depth 12, 2000 files, 1 MB per
+  file and 20 MB total; skips symlinks entirely. The numeric return value is
+  preserved (legacy callers) and truncation is reported through the optional
+  `onTruncated` out-param; caps are overridable via `{ caps }`.
+- `POST /capture/batch` rejects more than 100 captures with a Spanish 400 via
+  the exported `assertBatchSize` helper.
+
+**Gates:** suite 241 → 256/256 green (15 new tests in
+`server/__tests__/security-fs-containment.test.js`). `npx vite build` OK.
+
 ## 2026-11-08 — Security perimeter slice 1 (issue #3)
 
 Fail-closed perimeter, read-only demo mode, constant-time auth, and CSP.

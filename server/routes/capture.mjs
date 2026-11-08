@@ -2,6 +2,20 @@ import { Router } from 'express'
 
 const router = Router()
 
+export const MAX_BATCH_SIZE = 100
+
+/**
+ * Route-level guard for POST /capture/batch. Kept as a pure helper so the cap
+ * can be unit-tested without wiring the DI container.
+ */
+export function assertBatchSize(body) {
+  const captures = body && body.captures
+  if (Array.isArray(captures) && captures.length > MAX_BATCH_SIZE) {
+    return { ok: false, error: 'Máximo 100 capturas por lote.' }
+  }
+  return { ok: true }
+}
+
 /**
  * POST /capture — Save a single note via DI use case
  * Contrato (SPEC api.test.js:195-220): body { content, source, entityType?, title?, ... }
@@ -67,6 +81,11 @@ router.post('/capture', async (req, res) => {
 router.post('/capture/batch', async (req, res) => {
   try {
     const { captures } = req.body || {}
+
+    const size = assertBatchSize(req.body || {})
+    if (!size.ok) {
+      return res.status(400).json({ error: size.error })
+    }
 
     if (!Array.isArray(captures) || captures.length === 0) {
       return res.status(400).json({ error: 'captures array is required' })

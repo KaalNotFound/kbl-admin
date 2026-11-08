@@ -97,6 +97,7 @@ router.post('/active-recall/submit', async (req, res) => {
 router.post('/active-recall/ingest', async (req, res) => {
   try {
     const result = await req.useCases.activeRecall.ingest(req.body?.dir)
+    if (result.status) return res.status(result.status).json({ success: false, error: result.error })
     const stats = await req.useCases.activeRecall.getStats()
     res.json({ success: true, imported: result.value, stats })
   } catch (e) {

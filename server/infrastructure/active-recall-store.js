@@ -201,20 +201,69 @@ function submitReview({ question, type, answer, score, concept, definition, sour
 }
 
 // --- Backfill from existing _active_recall/ files ---
-function ingestFromActiveRecall(recallDir) {
+export const INGEST_CAPS = Object.freeze({
+  maxDepth: 12,
+  maxFiles: 2000,
+  maxBytesPerFile: 1024 * 1024,
+  maxTotalBytes: 20 * 1024 * 1024,
+})
+
+/**
+ * Backfill questions from markdown files.
+ *
+ * Returns the number of newly imported questions (legacy numeric contract).
+ * Truncation caused by a cap is reported through the optional `onTruncated`
+ * out-param so existing callers keep their numeric return value.
+ */
+function ingestFromActiveRecall(recallDir, { caps = {}, onTruncated } = {}) {
+  const limits = { ...INGEST_CAPS, ...caps }
   const store = readStore()
   let imported = 0
+  let files = 0
+  let totalBytes = 0
+  let truncated = false
 
-  function scanDir(dir) {
-    if (!fs.existsSync(dir)) return
+  function markTruncated() {
+    if (truncated) return
+    truncated = true
+    if (typeof onTruncated === 'function') onTruncated()
+  }
+
+  function scanDir(dir, depth) {
+    if (truncated || !fs.existsSync(dir)) return
+    if (depth > limits.maxDepth) {
+      markTruncated()
+      return
+    }
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (truncated) return
+      // Skip symlinks entirely: a link inside the vault may point anywhere,
+      // and following it would defeat the containment guard.
+      if (entry.isSymbolicLink()) continue
       const fullPath = path.join(dir, entry.name)
       if (entry.isDirectory()) {
         if (entry.name === '_feedback_requests') continue
-        scanDir(fullPath)
+        scanDir(fullPath, depth + 1)
         continue
       }
       if (!entry.name.endsWith('.md')) continue
+
+      if (files >= limits.maxFiles) {
+        markTruncated()
+        return
+      }
+      files++
+
+      const size = fs.statSync(fullPath).size
+      if (size > limits.maxBytesPerFile) {
+        markTruncated()
+        continue
+      }
+      if (totalBytes + size > limits.maxTotalBytes) {
+        markTruncated()
+        return
+      }
+      totalBytes += size
 
       const content = fs.readFileSync(fullPath, 'utf8')
       // Parse frontmatter (inline fields)
@@ -289,7 +338,7 @@ function ingestFromActiveRecall(recallDir) {
     }
   }
 
-  scanDir(recallDir)
+  scanDir(recallDir, 0)
   writeStore(store)
   return imported
 }
