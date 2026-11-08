@@ -25,7 +25,11 @@ import { createDiMiddleware } from './middleware/di.mjs';
 import { correlationIdMiddleware, requestLogger } from './infrastructure/correlation-middleware.js';
 
 // Security + Routes
-import { createSecurityMiddleware } from './middleware/security.mjs';
+import {
+  createSecurityMiddleware,
+  createDemoModeMiddleware,
+  assertSafeBind,
+} from './middleware/security.mjs';
 import { apiRouters } from './routes/index.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,12 +37,16 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const DEMO_MODE = process.env.KBL_DEMO === '1';
 
 // --- Security ---
 app.use(...createSecurityMiddleware());
 
 // --- Body parsing ---
 app.use(express.json({ limit: '1mb' }));
+
+// --- Demo read-only mode (public demo): block writes under /api ---
+app.use(createDemoModeMiddleware({ demoMode: DEMO_MODE }));
 
 // --- DI + Observability ---
 const container = createContainer({
@@ -97,6 +105,9 @@ const isMain = process.argv[1] && (
 );
 
 if (isMain) {
+  // Fail closed: never expose a non-loopback bind without auth or demo mode.
+  assertSafeBind({ host: HOST, apiKey: process.env.API_KEY || '', demoMode: DEMO_MODE });
+
   // Phase 2 live sync: the finanzas DB is a startup snapshot unless the
   // vault watcher runs. Fire-and-forget — a watcher failure must never
   // prevent boot (dynamic import keeps test-time imports side-effect free).

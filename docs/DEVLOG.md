@@ -3,6 +3,28 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-11-08 — Security perimeter slice 1 (issue #3)
+
+Fail-closed perimeter, read-only demo mode, constant-time auth, and CSP.
+
+- `server/middleware/security.mjs`: rate limiting now runs BEFORE API-key
+  auth, so repeated bad keys return 429 instead of unlimited 401s. Auth reads
+  only `x-api-key` (query `api_key` rejected) and compares with
+  `crypto.timingSafeEqual` behind a length guard; rejections are logged
+  throttled and never include the provided key.
+- New `assertSafeBind({ host, apiKey, demoMode })`: throws a Spanish error
+  when binding a non-loopback host without `API_KEY` and without demo mode.
+  Called in `server/index.js` inside the `isMain` block only.
+- New `createDemoModeMiddleware({ demoMode })` + `KBL_DEMO=1`: GET/HEAD/OPTIONS
+  pass, mutating methods under `/api` return 403 with
+  `Demo pública: modo solo lectura.`. Mounted after JSON parsing.
+- CORS defaults to same-origin (no `*`); configured `CORS_ORIGINS` are echoed.
+  Helmet CSP is enabled (`default-src 'self'`, `frame-ancestors 'none'`, fonts
+  allowed for Google Fonts), overridable via `opts.cspDirectives`.
+
+**Gates:** suite 228 → 241/241 green (13 new tests in
+`server/__tests__/security-hardening.test.js`). `npx vite build` OK.
+
 ## 2026-11-06 — Algorithms: pseudo-code execution panel on all 8 tabs (issue #2 stretch)
 
 The "Punto de ejecución" pseudo-code trace was Bubble-only; now every
