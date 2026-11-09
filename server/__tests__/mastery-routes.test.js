@@ -10,12 +10,14 @@ import request from 'supertest'
 
 // Mock CDP
 vi.mock('../infrastructure/brave-cdp-adapter.js', () => ({
-BraveCdpAdapter: vi.fn().mockImplementation(() => ({
-  connect: vi.fn(),
-  disconnect: vi.fn(),
-  scanUnreadChats: vi.fn(() => Promise.resolve([])),
-  extractConversation: vi.fn(() => Promise.resolve([])),
-}))
+BraveCdpAdapter: vi.fn().mockImplementation(function BraveCdpAdapterMock() {
+  return {
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    scanUnreadChats: vi.fn(() => Promise.resolve([])),
+    extractConversation: vi.fn(() => Promise.resolve([])),
+  }
+})
 }))
 
 // Mock fetch for external calls

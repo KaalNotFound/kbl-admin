@@ -3,17 +3,19 @@ import request from 'supertest'
 
 // Mock CDP helper (no Brave en tests)
 vi.mock('../infrastructure/brave-cdp-adapter.js', () => ({
-BraveCdpAdapter: vi.fn().mockImplementation(() => ({
-  connect: vi.fn(),
-  disconnect: vi.fn(),
-  scanUnreadChats: vi.fn(() => Promise.resolve([
-    { name: 'Test Contact', last_message: 'Hola', timestamp: new Date().toISOString(), unread: 2, avatar_letter: 'T' },
-  ])),
-  extractConversation: vi.fn((name) => Promise.resolve([
-    { text: 'Hola!', outgoing: false, timestamp: new Date().toISOString() },
-    { text: 'Como va?', outgoing: true, timestamp: new Date().toISOString() },
-  ])),
-}))
+BraveCdpAdapter: vi.fn().mockImplementation(function BraveCdpAdapterMock() {
+  return {
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    scanUnreadChats: vi.fn(() => Promise.resolve([
+      { name: 'Test Contact', last_message: 'Hola', timestamp: new Date().toISOString(), unread: 2, avatar_letter: 'T' },
+    ])),
+    extractConversation: vi.fn((name) => Promise.resolve([
+      { text: 'Hola!', outgoing: false, timestamp: new Date().toISOString() },
+      { text: 'Como va?', outgoing: true, timestamp: new Date().toISOString() },
+    ])),
+  }
+})
 }))
 
 // Mock fetch para Brave CDP HTTP

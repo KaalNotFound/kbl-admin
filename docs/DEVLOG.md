@@ -3,6 +3,39 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-11-09 — Security perimeter slice 8: Vite 8 + Vitest 5 upgrade clears the last dev advisories (issue #3)
+
+Final slice of the dependency modernization: `npm audit` had two dev-chain
+advisories with no non-breaking fix — tinypool ≤2.1.1 (critical, RCE-capable
+prototype-pollution gadgets, via vitest) and esbuild ≤0.24.2 (moderate,
+dev-server request forgery GHSA-67mh-4wv8-2f99, via vite).
+
+- Upgraded the toolchain majors: `vite ^5.4.2 → ^8.3.7`,
+  `vitest ^2.1.9 → ^5.1.0`, and `@vitejs/plugin-react ^4.3.1 → ^6.0.0`
+  (required adapter: plugin-react 6 is the first line declaring the
+  `vite ^8.0.0` peer; 4.x/5.x cap at vite 7).
+- Both advisory targets left the tree entirely: vitest 5 no longer uses
+  tinypool and vite 8 builds on rolldown/oxc instead of esbuild
+  (`npm ls tinypool esbuild` → empty). No overrides or forced resolutions
+  were needed.
+- Configs needed zero changes: `vitest.config.js` (defineConfig, node
+  environment, globals) and `vite.config.js` (react plugin, port/proxy,
+  outDir) use only APIs that survived both majors.
+- Vitest 5 tightened `vi.fn()` constructor semantics: a mock invoked with
+  `new` must have a `function`/`class` implementation (vitest ≤4 silently
+  allowed arrow implementations). The two `vi.mock('../infrastructure/
+  brave-cdp-adapter.js')` blocks in `api.test.js` and `mastery-routes.test.js`
+  converted their `mockImplementation(() => ({…}))` arrows to named function
+  implementations returning the object — mechanical, 2 files.
+- Engine floor raised: vitest 5 requires node `^22.12.0 || ^24.0.0 ||
+  >=26.0.0` (vite 8 requires `^20.19.0 || >=22.12.0`). `package.json`
+  engines `>=18 → >=22.12.0`; CI matrix `[20, 22] → [22, 24]` (node 20
+  can no longer run vitest).
+
+**Gates:** suite 306/306 green (29 files), contract/acceptance/fase suites
+green, `npx vite build` OK, `npm audit` → `found 0 vulnerabilities` in BOTH
+modes (full and `--omit=dev`). Prod-audit CI gate unaffected.
+
 ## 2026-11-09 — Security perimeter slice 4: exception handling + outbound bounding (issue #3)
 
 Stop raw `error.message` leaks and bound hanging outbound calls (A09/A10/LLM05).
