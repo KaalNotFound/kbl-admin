@@ -28,7 +28,8 @@
     "test": "npm run test:unit && npm run test:contract",
     "test:unit": "vitest run",
     "test:contract": "node --test server/test-contract.mjs server/test-acceptance.mjs server/test-fase6.mjs server/lib/test-active-recall-store.mjs server/infrastructure/test-observabilidad.mjs",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "audit:prod": "npm audit --omit=dev --audit-level=high"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",

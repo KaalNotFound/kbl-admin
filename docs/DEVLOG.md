@@ -981,3 +981,40 @@ and 800px the two cards share the same row (`sideBySide: true`), pseudo panel
 non-empty execution point (4–9 lines). After 3 "Siguiente paso" clicks the
 bubble counters read comparaciones=2 / intercambios=1; radix shows
 lecturas=2 / colocaciones=0 mid-run.
+
+### Security slice 5: supply chain audit gate, SHA-pinned CI, self-hosted fonts
+
+**Status:** complete (issue KaalNotFound/kbl-admin#3, OWASP A03 + CI hardening)
+
+**Dependencies.** `npm audit fix` (non-forced) cleared all high/critical prod
+vulns (ip-address via express-rate-limit, proxy-addr critical, zod via
+chromium-bidi/puppeteer-core). One moderate pair survived: `qs@6.15.4` pinned
+by express@4.22.2 (`~6.15.1` caps below the patched 6.16.1), and qs sits in
+the express query-parsing runtime path — not acceptable to leave. Fixed with
+an exact `overrides: { "qs": "6.16.2" }` (the same version body-parser already
+resolves, so the tree dedupes to a single copy). `npm audit --omit=dev` is now
+0 vulnerabilities. Remaining dev-only vulns (tinypool critical inside vitest,
+vite/esbuild moderate) require breaking major upgrades (vitest@5, vite@8) —
+out of scope, they never ship to server runtime; documented here instead.
+
+**CI hardening.** `actions/checkout` and `actions/setup-node` are SHA-pinned
+(`# v4` comment; mapping verified via `git ls-remote` refs/tags/v4) and a new
+gate step runs `npm audit --omit=dev --audit-level=high` right after `npm ci`,
+failing the job on any new high/critical prod advisory before tests run.
+Same ubuntu/node matrix as before; runnable locally via the new
+`npm run audit:prod` script.
+
+**Fonts.** The Google Fonts stylesheet link (Atkinson Hyperlegible, Inter,
+JetBrains Mono) was the only external third-party origin. Fonts are now
+self-hosted in `public/fonts/` (8 woff2 files, 248 KB, latin+latin-ext
+subsets — enough for es-AR). `fonts.css` preserves Google's exact @font-face
+blocks (family names, weights, unicode-range); Inter and JetBrains Mono are
+the same variable-font files Google served, Atkinson stays static. Rendering
+should be pixel-identical; the app now works fully offline and no SRI hashes
+are needed (same-origin only).
+
+**Gates:** `npx vitest run` 293/293 (286 baseline + 7 new in
+`server/__tests__/security-supply-chain.test.js`: audit exit 0, SHA-pinned
+actions, audit gate present, zero external font origins, local woff2 present,
+fonts.css url() check). `npx vite build` OK. `npm audit --omit=dev
+--audit-level=high` exits 0.
