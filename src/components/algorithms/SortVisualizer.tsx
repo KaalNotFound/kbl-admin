@@ -125,8 +125,9 @@ export default function SortVisualizer({ meta, renderAside }: SortVisualizerProp
       <div className="bg-card rounded-xl p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[220px]">
-            <label className="block text-xs font-semibold text-text-secondary mb-1.5">Array a ordenar</label>
+            <label htmlFor="sort-input" className="block text-xs font-semibold text-text-secondary mb-1.5">Array a ordenar</label>
             <input
+              id="sort-input"
               type="text"
               value={inputText}
               onChange={(e) => {
