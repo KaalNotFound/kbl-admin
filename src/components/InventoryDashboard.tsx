@@ -17,14 +17,18 @@ export default function InventoryDashboard() {
   const nameInputRef = useRef<HTMLInputElement>(null)
   const wasOpen = useRef(false)
 
-  const loadInventory = () => {
-    fetchInventory()
+  const loadInventory = (signal?: AbortSignal) => {
+    fetchInventory(signal)
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { loadInventory() }, [])
+  useEffect(() => {
+    const controller = new AbortController()
+    loadInventory(controller.signal)
+    return () => controller.abort()
+  }, [])
 
   const closeForm = () => {
     setShowForm(false)

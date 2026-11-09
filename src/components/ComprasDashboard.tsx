@@ -22,17 +22,19 @@ export default function ComprasDashboard({ month }: { month: string }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
     setError(null)
     setSummary(null)
     setPrevSummary(null)
     Promise.all([
-      fetchSummary(month),
-      fetchSummary(prevMonth(month)),
-      fetchInsights(month),
+      fetchSummary(month, controller.signal),
+      fetchSummary(prevMonth(month), controller.signal),
+      fetchInsights(month, controller.signal),
     ])
       .then(([s, p, i]) => { setSummary(s); setPrevSummary(p); setInsights(i); setLoading(false) })
-      .catch(e => { setError(e.message); setLoading(false) })
+      .catch(e => { if (controller.signal.aborted) return; setError(e.message); setLoading(false) })
+    return () => controller.abort()
   }, [month])
 
   useEffect(() => {

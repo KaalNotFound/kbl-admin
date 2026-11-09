@@ -10,20 +10,20 @@ import type {
   CompareData,
 } from '../types'
 
-export function fetchFinanzas(): Promise<FinanzasData> {
-  return fetchJSON<FinanzasData>(`/api/finanzas`)
+export function fetchFinanzas(signal?: AbortSignal): Promise<FinanzasData> {
+  return fetchJSON<FinanzasData>(`/api/finanzas`, signal)
 }
 
-export function fetchPatrimonio(): Promise<PatrimonioData> {
-  return fetchJSON<PatrimonioData>(`/api/patrimonio`)
+export function fetchPatrimonio(signal?: AbortSignal): Promise<PatrimonioData> {
+  return fetchJSON<PatrimonioData>(`/api/patrimonio`, signal)
 }
 
-export function fetchSummary(month: string): Promise<Summary> {
-  return fetchJSON<Summary>(`/api/summary?month=${month}`)
+export function fetchSummary(month: string, signal?: AbortSignal): Promise<Summary> {
+  return fetchJSON<Summary>(`/api/summary?month=${month}`, signal)
 }
 
-export function fetchInsights(month?: string): Promise<Insights> {
-  return fetchJSON<Insights>(`/api/insights${month ? `?month=${month}` : ''}`)
+export function fetchInsights(month?: string, signal?: AbortSignal): Promise<Insights> {
+  return fetchJSON<Insights>(`/api/insights${month ? `?month=${month}` : ''}`, signal)
 }
 
 export function fetchFoodSora(): Promise<FoodSoraDay[]> {

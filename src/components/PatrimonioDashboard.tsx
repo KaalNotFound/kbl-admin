@@ -11,11 +11,13 @@ export default function PatrimonioDashboard() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
     setError(null)
-    fetchPatrimonio()
+    fetchPatrimonio(controller.signal)
       .then(d => { setData(d); setLoading(false) })
-      .catch(e => { setError(e.message); setLoading(false) })
+      .catch(e => { if (controller.signal.aborted) return; setError(e.message); setLoading(false) })
+    return () => controller.abort()
   }, [])
 
   if (loading) return (

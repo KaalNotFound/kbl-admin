@@ -11,11 +11,13 @@ export default function FinanzasDashboard() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
     setError(null)
-    fetchFinanzas()
+    fetchFinanzas(controller.signal)
       .then(d => { setData(d); setLoading(false) })
-      .catch(e => { setError(e.message); setLoading(false) })
+      .catch(e => { if (controller.signal.aborted) return; setError(e.message); setLoading(false) })
+    return () => controller.abort()
   }, [])
 
   const deficitPct = data ? Math.round(Math.abs(data.flujo_neto) / data.gasto_total_mensual * 100) : 0

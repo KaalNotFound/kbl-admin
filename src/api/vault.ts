@@ -63,8 +63,8 @@ export function sendCapture(
   }).then(r => r.json())
 }
 
-export function fetchInventory(): Promise<InventoryResponse> {
-  return fetchJSON<InventoryResponse>(`/api/inventory`)
+export function fetchInventory(signal?: AbortSignal): Promise<InventoryResponse> {
+  return fetchJSON<InventoryResponse>(`/api/inventory`, signal)
 }
 
 export function createInventoryItem(data: {

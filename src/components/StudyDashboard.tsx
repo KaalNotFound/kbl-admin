@@ -46,9 +46,9 @@ export default function StudyDashboard() {
   // --- Prompts state ---
   const [promptTexts, setPromptTexts] = useState<Record<string, string>>({})
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      const d = await fetchStudyData()
+      const d = await fetchStudyData(signal)
       setData(d)
     } catch {
       setData(null)
@@ -57,12 +57,16 @@ export default function StudyDashboard() {
     }
   }, [])
 
-  // Initial load + auto-poll every 30s so new notes appear without manual refresh
-  useEffect(() => { load() }, [load])
-
+  // Initial load + auto-poll every 30s so new notes appear without manual
+  // refresh. One controller covers both, so unmount aborts the in-flight call.
   useEffect(() => {
-    const interval = setInterval(load, 30000)
-    return () => clearInterval(interval)
+    const controller = new AbortController()
+    load(controller.signal)
+    const interval = setInterval(() => load(controller.signal), 30000)
+    return () => {
+      clearInterval(interval)
+      controller.abort()
+    }
   }, [load])
 
   return (

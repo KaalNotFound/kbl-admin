@@ -2,8 +2,8 @@
 import { fetchJSON } from './client'
 import type { StudyData, StudyHistoryResponse, AnkiStats } from '../types'
 
-export function fetchStudyData(): Promise<StudyData> {
-  return fetchJSON<StudyData>(`/api/study/data`)
+export function fetchStudyData(signal?: AbortSignal): Promise<StudyData> {
+  return fetchJSON<StudyData>(`/api/study/data`, signal)
 }
 
 export function fetchStudyHistory(): Promise<StudyHistoryResponse> {

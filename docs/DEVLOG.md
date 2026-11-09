@@ -1208,3 +1208,29 @@ than rendering ten fetch-heavy dashboards — CSS-only changes, cheap guard
 against floor regressions.
 
 **Gates:** `npx vitest run` 333/333 green (+3 structure tests), `npx vite build` OK.
+
+## 2026-11-09 — Pre-deploy slice: fetchJSON timeout + abortable polling effects (issue #4, C5)
+
+`fetchJSON` (src/api/client.ts) now never hangs: every request carries an
+`AbortSignal.timeout(20s)`, merged with the caller's signal via
+`AbortSignal.any` when one is passed. Signature stays backward compatible —
+second arg is still the positional `signal` (pomodoro/active-recall keep
+working), `timeoutMs` is an optional third parameter. Callers get an
+AbortError instead of an eternal pending promise.
+
+Abort wiring (minimal, into existing effects only):
+- `FinanzasDashboard` / `PatrimonioDashboard`: one AbortController per
+  mount effect; aborts skip `setError` so a cancelled tab switch does not
+  flash an error banner.
+- `ComprasDashboard`: the three-call `Promise.all` (summary + prev month +
+  insights) shares one controller keyed on `month`.
+- `InventoryDashboard`: load effect owns a controller.
+- `StudyDashboard`: initial load and the 30s poll were two effects; merged
+  into one so a single controller aborts the in-flight poll on unmount.
+- `ShadowStudy` + `PomodoroTimer` already abort (slice A) — untouched.
+
+Domain fns consumed by these effects grew an optional trailing `signal`
+(`fetchFinanzas`, `fetchPatrimonio`, `fetchSummary`, `fetchInsights`,
+`fetchInventory`, `fetchStudyData`) — existing call sites unaffected.
+
+**Gates:** `npx vitest run` 333/333 green, `npx vite build` OK.
