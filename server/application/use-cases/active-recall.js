@@ -23,8 +23,20 @@ function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
-const QUESTION_LIMITS = { question: 2000, answer: 4000, module: 200, source: 500, tags: 20 }
+// Allowlist mirrors the store schema (seedQuestions persists question, type,
+// concept, definition, sourceNote, sourceBloque) — the first-party UI sends
+// those fields, so dropping them would silently degrade seeded questions.
+const QUESTION_LIMITS = {
+  question: 2000,
+  answer: 4000,
+  type: 10,
+  concept: 200,
+  definition: 4000,
+  sourceNote: 500,
+  sourceBloque: 100000,
+}
 const INVALID_QUESTION = { status: 400, error: 'Formato de pregunta inválido.' }
+const VALID_TYPES = new Set(['question', 'doubt', 'concept'])
 
 // Allowlist normalization (API3 mass assignment): only known, bounded fields
 // reach the store — every other client-supplied key is dropped.
@@ -37,14 +49,18 @@ function normalizeQuestion(raw) {
   if (raw.answer !== undefined && raw.answer !== null) {
     out.answer = String(raw.answer).slice(0, QUESTION_LIMITS.answer);
   }
-  if (raw.module !== undefined && raw.module !== null) {
-    out.module = String(raw.module).slice(0, QUESTION_LIMITS.module);
+  if (VALID_TYPES.has(raw.type)) {
+    out.type = raw.type;
   }
-  if (raw.source !== undefined && raw.source !== null) {
-    out.source = String(raw.source).slice(0, QUESTION_LIMITS.source);
+  for (const key of ['concept', 'definition', 'sourceNote']) {
+    if (raw[key] !== undefined && raw[key] !== null) {
+      out[key] = typeof raw[key] === 'string'
+        ? raw[key].slice(0, QUESTION_LIMITS[key])
+        : String(raw[key]).slice(0, QUESTION_LIMITS[key]);
+    }
   }
-  if (Array.isArray(raw.tags)) {
-    out.tags = raw.tags.filter((t) => typeof t === 'string').slice(0, QUESTION_LIMITS.tags);
+  if (Number.isInteger(raw.sourceBloque) && raw.sourceBloque >= 0) {
+    out.sourceBloque = Math.min(raw.sourceBloque, QUESTION_LIMITS.sourceBloque);
   }
   return out;
 }

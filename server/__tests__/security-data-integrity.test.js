@@ -201,13 +201,33 @@ describe('active-recall seed/inject normalize to the allowlist', () => {
     expect(noQ.error).toBe('Formato de pregunta inválido.')
   })
 
-  it('caps question length and tag count', async () => {
+  it('caps question length, keeps UI metadata, and drops unknown keys', async () => {
     const { uc, seedQuestions } = makeUc()
     await uc.seed({
-      questions: [{ question: 'q'.repeat(3000), tags: Array.from({ length: 30 }, (_, i) => `t${i}`) }],
+      questions: [{
+        question: 'q'.repeat(3000),
+        type: 'doubt',
+        concept: 'closures',
+        definition: 'd'.repeat(5000),
+        sourceNote: 'nota',
+        sourceBloque: 3,
+        evil: 'x',
+        module: 'dropped',
+        tags: ['dropped'],
+      }],
     })
     const persisted = seedQuestions.mock.calls[0][0][0]
+    expect(Object.keys(persisted).sort()).toEqual(
+      ['concept', 'definition', 'question', 'sourceBloque', 'sourceNote', 'type'])
     expect(persisted.question).toHaveLength(2000)
-    expect(persisted.tags).toHaveLength(20)
+    expect(persisted.definition).toHaveLength(4000)
+    expect(persisted.type).toBe('doubt')
+  })
+
+  it('rejects invalid type values instead of trusting them', async () => {
+    const { uc, seedQuestions } = makeUc()
+    const res = await uc.seed({ questions: [{ question: 'q', type: "'); DROP TABLE" }] })
+    expect(res.ok).toBe(true)
+    expect(seedQuestions.mock.calls[0][0][0]).toEqual({ question: 'q' }) // type dropped
   })
 })
