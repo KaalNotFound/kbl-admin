@@ -1057,3 +1057,30 @@ a duplicated method+path registration from silently shadowing an endpoint.
   it pins the invariant going forward.
 
 **Gates:** `npx vitest run` targeted file 3/3 green.
+
+## 2026-11-09 — Security slice 7b: per-route quotas for LLM and vault-scan endpoints (issue #3)
+
+LLM04/resource-abuse residual: the global 500/min limiter is generous for
+dashboard polling but does not protect the expensive NLM proxy calls,
+the recursive ingest scan or the per-request vault-doctor scan.
+
+- `createScopedRateLimiter({ windowMs, max, message })` in
+  `server/middleware/security.mjs`: same wire behavior as the global limiter
+  (draft-6 `RateLimit-*` headers, `legacyHeaders: false`) with a tighter
+  quota and a JSON 429 carrying a Spanish message. Global defaults untouched.
+- Quotas mounted: POST /notebooklm/ask 20/min, /content/generate 15/min,
+  /notebooks/create 10/min, POST /active-recall/ingest 5/min (recursive FS
+  scan), GET /vault-doctor 10/min (full vault scan per request).
+- Free-text caps via new `server/lib/nlm-guard.mjs` (8000 chars):
+  `question` on /ask, `name` on /notebooks/create, `prompt` on
+  /content/generate — absent fields untouched, numeric/id fields untouched.
+  Oversized payloads get 400 before reaching the proxy.
+- New `server/__tests__/security-scoped-rate.test.js` (6 tests): limiter
+  contract (429 + Spanish message + RateLimit-* headers), guard units, real
+  router integration (400 on oversized question; 429 on the 21st /ask call
+  within a minute) and stack introspection proving each expensive route has
+  a limiter before its handler. Two RED findings fixed: draft-6 header names
+  (not X-RateLimit-*) and module-scoped quota stores shared across tests
+  (resetModules per test).
+
+**Gates:** `npx vitest run` full suite green, `npx vite build` OK.

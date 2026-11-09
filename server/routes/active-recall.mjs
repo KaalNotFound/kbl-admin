@@ -1,7 +1,12 @@
 import { Router } from 'express'
 import { logAndRespond } from '../lib/error-handler.mjs'
+import { createScopedRateLimiter } from '../middleware/security.mjs'
 
 const router = Router()
+
+// Ingest triggers a recursive vault scan — expensive enough to warrant its
+// own tight quota (issue #3, resource abuse).
+const ingestLimiter = createScopedRateLimiter({ max: 5 });
 
 /**
  * Torre active-recall (ADR-025, 2026-08-04): router thin — toda la lógica
@@ -94,7 +99,7 @@ router.post('/active-recall/submit', async (req, res) => {
 })
 
 // POST /active-recall/ingest → { success, imported, stats }
-router.post('/active-recall/ingest', async (req, res) => {
+router.post('/active-recall/ingest', ingestLimiter, async (req, res) => {
   try {
     const result = await req.useCases.activeRecall.ingest(req.body?.dir)
     if (result.status) return res.status(result.status).json({ success: false, error: result.error })

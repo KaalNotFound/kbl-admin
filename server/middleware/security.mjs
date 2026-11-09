@@ -53,6 +53,25 @@ export function createDemoModeMiddleware({ demoMode = process.env.KBL_DEMO === '
   };
 }
 
+/**
+ * Per-route rate limiter for expensive endpoints (LLM proxies, vault scans).
+ * Same wire behavior as the global limiter (standard headers, JSON 429) but
+ * with a tighter per-route quota and a caller-provided Spanish message.
+ */
+export function createScopedRateLimiter({
+  windowMs = 60 * 1000,
+  max = 10,
+  message = 'Demasiadas solicitudes a este endpoint. Intentá de nuevo en un instante.',
+} = {}) {
+  return rateLimit({
+    windowMs,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => res.status(429).json({ error: message }),
+  });
+}
+
 const DEFAULT_CSP_DIRECTIVES = {
   'default-src': ["'self'"],
   'script-src': ["'self'"],

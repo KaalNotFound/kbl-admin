@@ -15,10 +15,14 @@ import { VAULT_ROOT } from '../infrastructure/vault-fs-adapter.mjs'
 import { obsidianUrl } from '../lib/obsidian-url.mjs'
 import { ensureDb } from '../lib/finanzas-db.mjs'
 import { scanVault } from '../lib/vault-doctor.mjs'
+import { createScopedRateLimiter } from '../middleware/security.mjs'
 
 const router = Router()
 
-router.get('/vault-doctor', async (req, res) => {
+// Full vault scan per request — scoped quota (issue #3, resource abuse).
+const scanLimiter = createScopedRateLimiter({ max: 10 });
+
+router.get('/vault-doctor', scanLimiter, async (req, res) => {
   try {
     // ensureDb() populates the runtime per-source status (DB loader +
     // watcher upserts) returned as `diagnostics`; a clean fresh clone

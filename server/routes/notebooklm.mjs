@@ -5,8 +5,17 @@
 
 import { Router } from 'express'
 import { logAndRespond } from '../lib/error-handler.mjs'
+import { createScopedRateLimiter } from '../middleware/security.mjs'
+import { guardQuestion, guardTextField } from '../lib/nlm-guard.mjs'
 
 const router = Router()
+
+// Per-route quotas (issue #3, LLM04): these endpoints hit the local
+// notebooklm-mcp proxy and cost real latency/quota — tighter than the
+// global 500/min ceiling.
+const askLimiter = createScopedRateLimiter({ max: 20 });
+const generateLimiter = createScopedRateLimiter({ max: 15 });
+const createNotebookLimiter = createScopedRateLimiter({ max: 10 });
 
 // --- Health check ---
 router.get('/notebooklm/health', async (_req, res) => {
@@ -19,8 +28,10 @@ router.get('/notebooklm/health', async (_req, res) => {
 })
 
 // --- Ask a question to NotebookLM ---
-router.post('/notebooklm/ask', async (req, res) => {
+router.post('/notebooklm/ask', askLimiter, async (req, res) => {
   try {
+    const rejected = guardQuestion(req.body);
+    if (rejected) return res.status(rejected.status).json({ error: rejected.error });
     const result = await req.useCases.notebooklm.ask(req.body)
     if (result.status) return res.status(result.status).json({ success: false, error: result.error })
     res.json(result)
@@ -51,8 +62,14 @@ router.post('/notebooklm/notebooks', async (req, res) => {
 })
 
 // --- Create notebook directly in NotebookLM ---
-router.post('/notebooklm/notebooks/create', async (req, res) => {
+router.post('/notebooklm/notebooks/create', createNotebookLimiter, async (req, res) => {
   try {
+    const rejected = guardTextField(
+      req.body,
+      'name',
+      'El campo "name" excede el máximo de 8000 caracteres.',
+    );
+    if (rejected) return res.status(rejected.status).json({ error: rejected.error });
     const result = await req.useCases.notebooklm.createNotebookDirect(req.body)
     res.json(result)
   } catch (e) {
@@ -121,8 +138,14 @@ router.post('/notebooklm/content/sources', async (req, res) => {
 })
 
 // --- Generate content (audio, video, quiz, report) ---
-router.post('/notebooklm/content/generate', async (req, res) => {
+router.post('/notebooklm/content/generate', generateLimiter, async (req, res) => {
   try {
+    const rejected = guardTextField(
+      req.body,
+      'prompt',
+      'El campo "prompt" excede el máximo de 8000 caracteres.',
+    );
+    if (rejected) return res.status(rejected.status).json({ error: rejected.error });
     const result = await req.useCases.notebooklm.generateContent(req.body)
     res.json(result)
   } catch (e) {
