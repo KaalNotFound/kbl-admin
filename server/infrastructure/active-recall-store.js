@@ -69,7 +69,7 @@ function ensureStore() {
 //   correct  → interval * 2
 //   partial  → interval stays
 //   incorrect → interval = 0 (due tomorrow)
-function calcNextReview(interval, score, previousScore) {
+function calcNextReview(interval, score) {
   let newInterval
   if (score === 'correct') {
     newInterval = Math.max(1, Math.round((interval || 0) * 1.5))
@@ -182,7 +182,6 @@ function submitReview({ question, type, answer, score, concept, definition, sour
   }
 
   const q = store.questions[id]
-  const previousScore = q.reviews.length > 0 ? q.reviews[q.reviews.length - 1].score : null
 
   // Add review entry
   const review = {
@@ -199,7 +198,7 @@ function submitReview({ question, type, answer, score, concept, definition, sour
   if (definition) q.definition = definition
 
   // Calculate spaced repetition
-  const { interval, nextReview, due } = calcNextReview(q.interval, score, previousScore)
+  const { interval, nextReview, due } = calcNextReview(q.interval, score)
   q.interval = interval
   q.nextReview = nextReview
   q.due = due

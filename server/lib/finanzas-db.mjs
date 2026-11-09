@@ -199,20 +199,29 @@ function parseComprasFile(content, relArchivo) {
   return rows
 }
 
+// B7 perf: the five field regexes are constants — hoisted to module scope so
+// files stop building 5 `new RegExp` per parse. Reuse is safe: matchAll()
+// clones the regex and never advances the shared object's lastIndex (still
+// reset defensively before each use, /g regexes are stateful).
+const FOOD_SORA_FIELDS = ['madrugada_food_sora', 'manana_food_sora', 'mediodia_food_sora', 'tarde_food_sora', 'noche_food_sora']
+const FOOD_SORA_LABELS = ['madrugada', 'manana', 'mediodia', 'tarde', 'noche']
+const FOOD_SORA_REGEXPS = FOOD_SORA_FIELDS.map(
+  (field) => new RegExp(`^[ \\t]*-?[ \\t]*${field}::[ \\t]*(.*)`, 'gm')
+)
+
 /**
  * Parse one Daily note's food_sora slot fields into one table row.
  * The date comes from the FILENAME (same`cleanDate(file)` heuristic as
  * the full loader), not from frontmatter.
  */
 function parseFoodSoraFile(content, fileName, relArchivo) {
-  const fields = ['madrugada_food_sora', 'manana_food_sora', 'mediodia_food_sora', 'tarde_food_sora', 'noche_food_sora']
-  const labels = ['madrugada', 'manana', 'mediodia', 'tarde', 'noche']
   const vals = {}
-  for (let i = 0; i < fields.length; i++) {
-    const rx = new RegExp(`^[ \\t]*-?[ \\t]*${fields[i]}::[ \\t]*(.*)`, 'gm')
+  for (let i = 0; i < FOOD_SORA_FIELDS.length; i++) {
+    const rx = FOOD_SORA_REGEXPS[i]
+    rx.lastIndex = 0 // stateful /g — always start fresh
     const matches = [...content.matchAll(rx)]
     const last = matches.filter(m => m[1].trim() !== '').pop()
-    vals[labels[i]] = last ? last[1].trim() : ''
+    vals[FOOD_SORA_LABELS[i]] = last ? last[1].trim() : ''
   }
   return { fecha: cleanDate(fileName), ...vals, archivo: relArchivo }
 }

@@ -53,26 +53,22 @@ async function ensureLoggedIn(wa) {
 
 export class BraveCdpAdapter {
   async connect() {
-    try {
-      if (_browser && _browser.isConnected()) return;
-      for (let i = 0; i < 3; i++) {
-        try {
-          const wsEndpoint = await resolveCdpEndpoint(CDP_URL);
-          _browser = await puppeteer.connect({ browserWSEndpoint: wsEndpoint, defaultViewport: null });
-          // A real browser can disappear at any time (tab closed, WhatsApp
-          // navigation, Brave restart). Track the disconnect so the next
-          // call reconnects instead of using a dead handle, and so detach
-          // events don't leak unhandled rejections past the process-level
-          // safety net.
-          _browser.on('disconnected', () => { _browser = null; });
-          return;
-        } catch (err) {
-          if (i === 2) throw new Error('CDP no conecta en ' + CDP_URL + ': ' + err.message);
-          await sleep(1000 * Math.pow(2, i));
-        }
+    if (_browser && _browser.isConnected()) return;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const wsEndpoint = await resolveCdpEndpoint(CDP_URL);
+        _browser = await puppeteer.connect({ browserWSEndpoint: wsEndpoint, defaultViewport: null });
+        // A real browser can disappear at any time (tab closed, WhatsApp
+        // navigation, Brave restart). Track the disconnect so the next
+        // call reconnects instead of using a dead handle, and so detach
+        // events don't leak unhandled rejections past the process-level
+        // safety net.
+        _browser.on('disconnected', () => { _browser = null; });
+        return;
+      } catch (err) {
+        if (i === 2) throw new Error('CDP no conecta en ' + CDP_URL + ': ' + err.message);
+        await sleep(1000 * Math.pow(2, i));
       }
-    } catch (err) {
-      throw err;
     }
   }
 

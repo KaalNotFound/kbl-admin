@@ -4,7 +4,8 @@
  * store-based sobre el behavioral-log.json persistido.
  *
  * Migrado verbatim de lib/behavioral-session.mjs + lib/behavioral-reports.mjs
- * (el barrel lib/behavioral-tracker.mjs queda legacy para backward compat).
+ * (ambos legacy fueron eliminados en 2026-11-09 junto a la barrel
+ * lib/behavioral-tracker.mjs — sin importers, use-case por DI).
  * Sin imports de lib/ ni fs — todo el I/O por deps inyectadas (vault).
  *
  * FIX de path incluido: el legacy construía el store path con __dirname

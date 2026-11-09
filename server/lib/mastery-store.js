@@ -330,22 +330,6 @@ function getSkillTree() {
   }))
 }
 
-/**
- * Auto-feed from active recall submissions.
- * Called when a review is submitted via active-recall-store.
- */
-function feedFromActiveRecall(concept, score) {
-  if (!concept) return null
-  const scoreMap = { correct: 90, partial: 60, incorrect: 25 }
-  const numericScore = scoreMap[score] ?? 50
-  return validateConcept({
-    concept,
-    score: numericScore,
-    scoreType: 'active_recall',
-    details: `Auto-fed from active recall: ${score}`,
-  })
-}
-
 ensureStore()
 
 export {
@@ -354,7 +338,6 @@ export {
   getConceptDetail,
   getSkillTree,
   getBypassStatus,
-  feedFromActiveRecall,
   LEVEL_THRESHOLDS,
   FEYNMAN_GATE_LEVEL,
   FEYNMAN_PASSING_SCORE,

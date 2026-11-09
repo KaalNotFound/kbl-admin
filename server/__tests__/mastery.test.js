@@ -3,7 +3,7 @@
  *
  * Covers:
  * - mastery-store.js: calculateMastery, getLevel, validateConcept, getAllMastery,
- *   getConceptDetail, getSkillTree, feedFromActiveRecall
+ *   getConceptDetail, getSkillTree
  * - mastery.mjs routes: all 7 endpoints
  * - Helper functions: basicEvaluation, parseSocraticEvaluation, calculateBurnDown
  */
@@ -359,38 +359,5 @@ describe('Mastery Store — getSkillTree', () => {
     const m1 = tree.find(m => m.name === 'M1')
     expect(m1.avgScore).toBeGreaterThan(0)
     expect(typeof m1.masteredCount).toBe('number')
-  })
-})
-
-describe('Mastery Store — feedFromActiveRecall', () => {
-  it('returns null for null/undefined concept', () => {
-    expect(masteryStore.feedFromActiveRecall(null, 'correct')).toBeNull()
-    expect(masteryStore.feedFromActiveRecall(undefined, 'correct')).toBeNull()
-  })
-
-  it('maps correct → 90, partial → 60, incorrect → 25', () => {
-    const r1 = masteryStore.feedFromActiveRecall('Test1', 'correct')
-    expect(r1.score).toBeGreaterThanOrEqual(90)
-
-    const r2 = masteryStore.feedFromActiveRecall('Test2', 'partial')
-    expect(r2.score).toBeGreaterThanOrEqual(50) // 60 with weighted avg
-
-    const r3 = masteryStore.feedFromActiveRecall('Test3', 'incorrect')
-    expect(r3.score).toBeLessThan(50)
-  })
-
-  it('defaults to 50 for unknown score type', () => {
-    const r = masteryStore.feedFromActiveRecall('Test4', 'maybe')
-    expect(r).toHaveProperty('score')
-    expect(r.score).toBeGreaterThanOrEqual(40)
-  })
-
-  it('sets scoreType to active_recall', () => {
-    const r = masteryStore.feedFromActiveRecall('Test5', 'correct')
-    // The scoreType is stored internally; we verify via detail
-    const detail = masteryStore.getConceptDetail('Test5')
-    expect(detail).not.toBeNull()
-    expect(detail.scoreHistory.length).toBeGreaterThan(0)
-    expect(detail.scoreHistory[0].scoreType).toBe('active_recall')
   })
 })

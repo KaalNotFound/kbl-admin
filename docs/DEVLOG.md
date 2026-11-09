@@ -1117,3 +1117,32 @@ the recursive ingest scan or the per-request vault-doctor scan.
   (resetModules per test).
 
 **Gates:** `npx vitest run` full suite green, `npx vite build` OK.
+
+## 2026-11-09 — Pre-deploy slice: YAGNI deletions and dead params (issue #4, B4/B7)
+
+Two payloads of dead code removed after the ADR-025 torre migration proved
+they were unreferenced:
+
+- **Legacy behavioral trio deleted** (`server/lib/behavioral-tracker.mjs`,
+  `behavioral-session.mjs`, `behavioral-reports.mjs`, ~300 LOC). Verified:
+  zero importers anywhere (prod, tests, shared_kernel) — the application
+  use-case `behavioral.js` migrated their logic verbatim and its header
+  still claiming "the barrel stays for backward compat" is updated. Root
+  cause: the migration note was never cleaned, so the barrel looked load-
+  bearing when it wasn't.
+- **`feedFromActiveRecall` deleted** from `server/lib/mastery-store.js`.
+  It was exported but never wired: the auto-feed from active recall
+  submissions it promised does not exist in any prod path (DI injects only
+  the 5 functions the mastery use-case consumes). YAGNI — if the feature is
+  ever wanted, it needs real wiring first, not an unused export. Its 4 tests
+  were removed with it.
+- **`calcNextReview(interval, score, previousScore)`**: the third param was
+  never read inside the function; dropped from signature + call site.
+- **`catch (err) { throw err }` in BraveCdpAdapter#connect**: dead wrapper.
+- **`finanzas-db.mjs`**: the five constant field regexes in
+  `parseFoodSoraFile` were rebuilt per parsed file (`new RegExp` x5) —
+  hoisted to module scope (`FOOD_SORA_FIELDS/LABELS/REGEXPS`). Reuse of /g
+  regexes with `matchAll()` is spec-safe (it clones; lastIndex never
+  advances on the original) and is defensively reset before each use.
+
+**Gates:** `npx vitest run` full suite green.
