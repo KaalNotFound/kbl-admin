@@ -60,6 +60,10 @@ export function generateMerge(input) {
         const a = arr[i]
         const b = arr[j]
         const takeLeft = a <= b
+        // The compared pair must be captured BEFORE advancing (issue #4 A1):
+        // after `i++`/`j++` the raw pointers no longer describe this comparison.
+        const ci = i
+        const cj = j
         if (takeLeft) {
           aux[k++] = arr[i++]
         } else {
@@ -71,9 +75,9 @@ export function generateMerge(input) {
             i,
             j,
             line: 'merge',
-            compare: takeLeft ? [i, j] : [i - 1, j],
+            compare: [ci, cj],
             highlight: [...range(lo, mid), ...range(mid, hi)],
-            comparisonText: `arr[${i - 1}] (${a}) ${takeLeft ? '≤' : '>'} arr[${j}] (${b}) → escribe ${takeLeft ? a : b}`,
+            comparisonText: `arr[${ci}] (${a}) ${takeLeft ? '≤' : '>'} arr[${cj}] (${b}) → escribe ${takeLeft ? a : b}`,
             description: `Fusiona [${lo}..${mid - 1}] con [${mid}..${hi - 1}]: ${takeLeft ? a : b} sale primero`,
           })
         )

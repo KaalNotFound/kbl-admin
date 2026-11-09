@@ -88,6 +88,53 @@ describe('sort frame generators', () => {
     expect(levelFrames[0].highlight.length).toBeGreaterThanOrEqual(2)
   })
 
+  // issue #4 A1: compare pairs must be captured BEFORE pointer advances.
+  it('merge: first compare frame of [2,1,4] is the live pair [0,1]', () => {
+    const frames = generateMerge([2, 1, 4])
+    const firstCompare = frames.find((f) => f.line === 'merge' && f.compare)
+    expect(firstCompare.compare).toEqual([0, 1]) // arr[0]=2 vs arr[1]=1
+  })
+
+  it('merge: every compare frame holds 2 valid live indices (never negative, never out of range)', () => {
+    for (const input of [[2, 1, 4], [4, 10, 3, 5, 1, 9, 2, 8], [5, 1, 4, 2, 8], [2, 2, 2]]) {
+      const n = input.length
+      const frames = generateMerge(input)
+      for (const f of frames) {
+        if (f.line !== 'merge' || f.compare === null) continue
+        expect(f.compare.length).toBe(2)
+        for (const idx of f.compare) {
+          expect(idx).toBeGreaterThanOrEqual(0)
+          expect(idx).toBeLessThan(n)
+        }
+      }
+    }
+  })
+
+  it('merge: compare frames count equals the comparisons the algorithm performed', () => {
+    for (const input of [[2, 1, 4], [4, 10, 3, 5, 1, 9, 2, 8]]) {
+      const frames = generateMerge(input)
+      const compareFrames = frames.filter((f) => f.line === 'merge' && f.compare !== null)
+      expect(compareFrames.length).toBe(last(frames).comparisons)
+    }
+  })
+
+  // issue #4 A1 (heap): the right-child check was evaluated twice per sift step;
+  // collapsing it to one check must keep frames byte-identical in count.
+  it('heap: frame counts and counters stay locked after the duplicate-check collapse', () => {
+    for (const [input, frameCount, comparisons, swaps] of [
+      [[4, 10, 3, 5, 1, 9, 2, 8], 48, 27, 19],
+      [[5, 1, 4, 2, 8], 26, 12, 10],
+      [[2, 2, 2], 10, 3, 2],
+      [[9, -2, 5, -2], 16, 6, 4],
+    ]) {
+      const frames = generateHeap(input)
+      expect(frames.length).toBe(frameCount)
+      expect(last(frames).comparisons).toBe(comparisons)
+      expect(last(frames).swaps).toBe(swaps)
+      expect(last(frames).arr).toEqual(sorted(input))
+    }
+  })
+
   it('shell: gap sequence follows Ciura (filtered to array size) and notes the gap', () => {
     const frames = generateShell([5, 2, 8, 1, 9, 3, 7, 2, 6, 4])
     const gapLines = frames.filter((f) => f.line === 'gap')

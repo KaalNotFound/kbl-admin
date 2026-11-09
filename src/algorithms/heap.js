@@ -44,8 +44,12 @@ export function generateHeap(input) {
       }
       if (r < heapSize) {
         comparisons++
-        if (arr[r] > arr[largest]) target = r
-        if (arr[r] > arr[largest]) largest = r
+        // Single evaluation of the same condition (issue #4 A1): previously
+        // `arr[r] > arr[largest]` was checked twice with identical outcome.
+        if (arr[r] > arr[largest]) {
+          target = r
+          largest = r
+        }
       }
 
       if (target !== null) {
