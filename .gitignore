@@ -44,3 +44,8 @@ FEEDBACK.md
 
 # Root-level runtime outbox (same class as server/data/)
 data/
+
+# Publish hygiene: local agent traces, backups, personal data snapshots
+.atl/
+*.bak
+server/_MARKET_DATA.json

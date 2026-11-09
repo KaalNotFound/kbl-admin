@@ -96,6 +96,13 @@ the redundant-concept audit and the NotebookLM feasibility study — is preserve
 in [`docs/planning-2026-07-gamification-refactor.md`](docs/planning-2026-07-gamification-refactor.md).
 Notable engineering fixes are logged in [`docs/DEVLOG.md`](docs/DEVLOG.md).
 
+## Security
+
+- `x-api-key` auth is fail-closed when the server binds outside loopback (no key ⇒ no boot).
+- `KBL_DEMO=1` enables a read-only demo mode for public previews.
+- Content-Security-Policy and rate limiting are on by default; fonts are self-hosted (no third-party origins).
+- `npm run audit:prod` gates production dependency audits (`npm audit --omit=dev --audit-level=high`).
+
 ## License
 
 [MIT](LICENSE)

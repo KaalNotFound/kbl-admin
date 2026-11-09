@@ -1018,3 +1018,27 @@ are needed (same-origin only).
 actions, audit gate present, zero external font origins, local woff2 present,
 fonts.css url() check). `npx vite build` OK. `npm audit --omit=dev
 --audit-level=high` exits 0.
+
+## 2026-11-09 — Security slice 6: publish hygiene — untrack personal artifacts, sanitize paths (issue #3)
+
+Pre-publication data-leak sweep of tracked contents.
+
+- Untracked and deleted `server/_MARKET_DATA.json` (personal data snapshot)
+  and `server/cdp-helper.mjs.bak` (dead backup). `server/routes/market.mjs`
+  now resolves its data file from `KBL_DATA_DIR` (default `server/data/`,
+  gitignored) as `market-data.json`, matching the other JSON stores; the
+  endpoint keeps its empty-payload fail-safe when the file is absent.
+- `.gitignore` gained `.atl/`, `*.bak`, and `server/_MARKET_DATA.json` so
+  local agent traces and backups can never be committed accidentally.
+- Sanitized the single tracked personal absolute path (a test fixture string
+  in `security-exceptions-logging.test.js`) to a tmpdir-style path; email and
+  Windows-path scans over tracked text came back clean.
+- New `server/__tests__/security-publish-hygiene.test.js` (4 tests) guards
+  this permanently: no tracked `*.bak`/market snapshot, zero personal-path
+  matches across tracked text files, ignore rules present, market data path
+  env-configurable. README gained a factual `## Security` summary.
+- `docs/screenshots/*.png` are real UI captures that cannot be scanned
+  textually — flagged for manual visual review before going public.
+
+**Gates:** `npx vitest run` 297/297 (293 baseline + 4 new), `npx vite build`
+OK, `npm run audit:prod` exits 0.

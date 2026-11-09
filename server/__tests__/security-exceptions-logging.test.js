@@ -46,7 +46,7 @@ import { _resetLogThrottle } from '../lib/error-handler.mjs'
 import { createBraveUseCases } from '../application/use-cases/brave.js'
 import { createSecurityMiddleware } from '../middleware/security.mjs'
 
-const SECRET = 'secret path /home/kaalnotfound/vault.db'
+const SECRET = 'secret path /tmp/kbl-redaction-probe/vault.db'
 const GENERIC = 'Error interno del servidor'
 
 let consoleErrorSpy

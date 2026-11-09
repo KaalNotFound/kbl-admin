@@ -7,7 +7,12 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const router = Router()
-const MARKET_DATA_PATH = path.resolve(__dirname, '..', '_MARKET_DATA.json')
+// Personal market data is not tracked in the repo: point KBL_DATA_DIR at a
+// directory containing market-data.json to enable this dashboard.
+const MARKET_DATA_PATH = path.resolve(
+  process.env.KBL_DATA_DIR || path.join(__dirname, '..', 'data'),
+  'market-data.json',
+)
 
 // GET /api/market/data
 router.get('/market/data', (req, res) => {
