@@ -1042,3 +1042,18 @@ Pre-publication data-leak sweep of tracked contents.
 
 **Gates:** `npx vitest run` 297/297 (293 baseline + 4 new), `npx vite build`
 OK, `npm run audit:prod` exits 0.
+
+## 2026-11-09 — Security slice 7a: route registry lock against shadowing and orphans (issue #3)
+
+Closes the OWASP API9 residual: nothing prevented an unmounted router file or
+a duplicated method+path registration from silently shadowing an endpoint.
+
+- New `server/__tests__/security-route-registry.test.js` walks the 21 live
+  router stacks (`apiRouters[i].stack`) and asserts: router count equals
+  route files on disk (20 in `server/routes/` + `../_finanzas.mjs` = 21, so a
+  new orphan file fails until mounted), >80 distinct method+path keys, zero
+  duplicate keys across routers, and only real HTTP methods declared.
+- Lock test by construction: green on first run (no defect existed to fix);
+  it pins the invariant going forward.
+
+**Gates:** `npx vitest run` targeted file 3/3 green.
