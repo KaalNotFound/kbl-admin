@@ -72,7 +72,7 @@ export default function BiasRadar() {
       </div>
 
       {/* Metrics cards */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         <div className="bg-card rounded-xl p-4 text-center">
           <p className="text-xs text-text-secondary">Ratio Humano/IA</p>
           <p className="text-2xl font-bold text-accent">{data.human_vs_ai_ratio}%</p>

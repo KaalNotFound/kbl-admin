@@ -152,7 +152,7 @@ export default function StudyDashboard() {
 
               {/* Notes table */}
               {tab === 'notes' && (
-                <div className="bg-card rounded-xl overflow-hidden">
+                <div className="bg-card rounded-xl overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border-light text-text-secondary text-xs uppercase">

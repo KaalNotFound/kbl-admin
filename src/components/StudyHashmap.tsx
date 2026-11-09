@@ -156,7 +156,7 @@ export default function StudyHashmap() {
   return (
     <div>
       {/* Stats bar */}
-      <div className="grid grid-cols-5 gap-2 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
         <StatCard label="Total" value={stats?.total ?? 0} color="text-text-primary" active={scoreFilter === null} onClick={() => setScoreFilter(null)} />
         <StatCard label="✅ Correctas" value={stats?.correct ?? 0} color="text-success" active={scoreFilter === 'correct'} onClick={() => setScoreFilter(scoreFilter === 'correct' ? null : 'correct')} />
         <StatCard label="🟡 Parciales" value={stats?.partial ?? 0} color="text-warning" active={scoreFilter === 'partial'} onClick={() => setScoreFilter(scoreFilter === 'partial' ? null : 'partial')} />

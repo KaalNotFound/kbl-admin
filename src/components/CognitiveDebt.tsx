@@ -31,7 +31,7 @@ export default function CognitiveDebtChart() {
       )}
 
       {/* Main metric */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="bg-card rounded-xl p-4 text-center">
           <p className="text-xs text-text-secondary">Deuda</p>
           <p className={`text-3xl font-bold ${debtColor}`}>{data.debt_ratio}%</p>

@@ -1180,3 +1180,31 @@ Accessibility pass over the shared modal pattern and the finance tab trio:
   badge hue follows `--danger` (#e08a7a family, the trio's own red).
 
 **Gates:** `npx vitest run` 330/330 green (+7 new modal/label tests), `npx vite build` OK.
+
+## 2026-11-09 — Pre-deploy slice: mobile grid floors and scrollable tables (issue #4, C3)
+
+Every dashboard grid listed in the issue now has a mobile floor before its
+step-up breakpoint (grids of 3-5 columns no longer render 60px-wide cells on
+phones): `grid-cols-2 sm:grid-cols-5` StudyHashmap stats,
+`grid-cols-2 sm:grid-cols-4` TodosDashboard + Integrations + CognitiveDebt
+skeletons/metrics, `grid-cols-2 sm:grid-cols-3` SystemLogs / BiasRadar /
+EntityTypes / Queue / Projects, and `grid-cols-1 sm:grid-cols-2` for the
+SocraticAudit strengths/gaps lists (text lists read better stacked).
+StudyDashboard's top grid (drifted from issue's line 42 to 104) already
+floored at `grid-cols-2 md:grid-cols-4` — untouched. The Study notes table
+(line 156-201) now sits in an `overflow-x-auto` wrapper (was
+`overflow-hidden`, which clipped the Modificado column on phones); the
+finance/search tables already had their wrappers.
+
+**body{overflow-x:hidden} kept**: after the table wraps, nothing text-bearing
+relies on the clip, but the finance heroes' decorative glow circles
+(`absolute -top-2/5 -right-1/5 w-[300px]`, animate-glow-pulse) extend past
+their cards by design and would reintroduce horizontal viewport scroll.
+Removing the rule would need per-card overflow guards that visibly crop the
+glow — not accepted for this slice.
+
+Covered by a source-level structure test (`responsive-grid.test.ts`) rather
+than rendering ten fetch-heavy dashboards — CSS-only changes, cheap guard
+against floor regressions.
+
+**Gates:** `npx vitest run` 333/333 green (+3 structure tests), `npx vite build` OK.

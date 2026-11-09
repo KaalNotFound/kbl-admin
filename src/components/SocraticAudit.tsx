@@ -158,7 +158,7 @@ export default function SocraticAudit() {
           </div>
 
           {/* Strengths & Gaps */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             {result.strengths.length > 0 && (
               <div>
                 <p className="text-xs text-success mb-1.5">{'\u2705'} Fortalezas</p>

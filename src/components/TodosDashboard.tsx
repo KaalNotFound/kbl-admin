@@ -350,7 +350,7 @@ function VaultGraphSvg({ graph }: { graph: TodosGraph }) {
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="card p-5 animate-pulse">
             <div className="h-3 bg-surface rounded w-1/2 mb-2" />

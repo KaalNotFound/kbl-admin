@@ -160,7 +160,7 @@ export default function ProjectsDashboard() {
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {[1, 2, 3].map(i => (
           <div key={i} className="card p-5 animate-pulse">
             <div className="h-3 bg-surface rounded w-1/2 mb-2" />
