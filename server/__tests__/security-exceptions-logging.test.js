@@ -43,7 +43,6 @@ import masteryRouter from '../routes/mastery.mjs'
 import studyRouter from '../routes/study.mjs'
 import captureRouter from '../routes/capture.mjs'
 import { _resetLogThrottle } from '../lib/error-handler.mjs'
-import { createBraveUseCases } from '../application/use-cases/brave.js'
 import { createSecurityMiddleware } from '../middleware/security.mjs'
 
 const SECRET = 'secret path /tmp/kbl-redaction-probe/vault.db'
@@ -166,22 +165,26 @@ describe('A09 — client error leaks', () => {
 })
 
 describe('A10/LLM05 — outbound calls are bounded', () => {
-  it('brave getTabs passes an AbortSignal to fetch', async () => {
+  it('brave adapter listTabs issues a bounded fetch (AbortSignal)', async () => {
+    // B2: the bounded CDP fetch lives in the adapter (port) — the use-case
+    // consumes brave.listTabs() without touching global fetch.
+    const { BraveCdpAdapter } = await import('../infrastructure/brave-cdp-adapter.js')
     const fetchSpy = vi.fn(() =>
       Promise.resolve({ ok: true, json: () => Promise.resolve([]) }))
     vi.stubGlobal('fetch', fetchSpy)
-    const uc = createBraveUseCases({ brave: {} })
-    await uc.getTabs()
+    const adapter = new BraveCdpAdapter()
+    await adapter.listTabs()
     const init = fetchSpy.mock.calls[0][1]
     expect(init).toBeDefined()
     expect(init.signal).toBeInstanceOf(AbortSignal)
   })
 
-  it('brave activateTab passes an AbortSignal to fetch', async () => {
+  it('brave adapter activateTab issues a bounded fetch (AbortSignal)', async () => {
+    const { BraveCdpAdapter } = await import('../infrastructure/brave-cdp-adapter.js')
     const fetchSpy = vi.fn(() => Promise.resolve({ ok: true }))
     vi.stubGlobal('fetch', fetchSpy)
-    const uc = createBraveUseCases({ brave: {} })
-    await uc.activateTab('tab-1')
+    const adapter = new BraveCdpAdapter()
+    await adapter.activateTab('tab-1')
     const init = fetchSpy.mock.calls[0][1]
     expect(init.signal).toBeInstanceOf(AbortSignal)
   })

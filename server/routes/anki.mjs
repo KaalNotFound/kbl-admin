@@ -3,7 +3,8 @@ import { throttledErrorLog } from '../lib/error-handler.mjs'
 
 const router = Router()
 
-const ANKI_URL = 'http://localhost:8765'
+// B1: env-configurable service URL (same default as before).
+const ANKI_URL = process.env.ANKI_URL || 'http://localhost:8765'
 
 async function ankiAction(action, params = {}) {
   const response = await fetch(ANKI_URL, {

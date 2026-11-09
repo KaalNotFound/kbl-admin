@@ -1,10 +1,21 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import request from 'supertest'
+import { createBraveUseCases } from '../application/use-cases/brave.js'
 
-// Mock CDP helper (no Brave en tests)
+// B2 (DIP): hoisted collector — every adapter instance built by the DI
+// container is registered here so tests can assert the use-case talks to
+// the port instead of global fetch.
+const { braveAdapterInstances } = vi.hoisted(() => ({ braveAdapterInstances: [] }))
+
+// Mock CDP adapter (no Brave en tests). listTabs/activateTab are the port
+// methods the use-case must consume (B1+B2: DIP).
 vi.mock('../infrastructure/brave-cdp-adapter.js', () => ({
 BraveCdpAdapter: vi.fn().mockImplementation(function BraveCdpAdapterMock() {
-  return {
+  const TABS = [
+    { id: 'tab1', type: 'page', title: 'Test Page', url: 'https://example.com', faviconUrl: '' },
+    { id: 'tab2', type: 'page', title: 'WhatsApp', url: 'https://web.whatsapp.com', faviconUrl: '' },
+  ]
+  const instance = {
     connect: vi.fn(),
     disconnect: vi.fn(),
     scanUnreadChats: vi.fn(() => Promise.resolve([
@@ -14,13 +25,20 @@ BraveCdpAdapter: vi.fn().mockImplementation(function BraveCdpAdapterMock() {
       { text: 'Hola!', outgoing: false, timestamp: new Date().toISOString() },
       { text: 'Como va?', outgoing: true, timestamp: new Date().toISOString() },
     ])),
+    listTabs: vi.fn(() => Promise.resolve(TABS.map((t) => ({ ...t })))),
+    activateTab: vi.fn(() => Promise.resolve(true)),
   }
+  braveAdapterInstances.push(instance)
+  return instance
 })
 }))
 
-// Mock fetch para Brave CDP HTTP
-vi.stubGlobal('fetch', vi.fn((url) => {
-  if (url === 'http://127.0.0.1:9222/json') {
+// Mock fetch — env-aware (B1: CDP_URL is env-configurable, same default).
+// Note B2: after the use-case DI fix these branches only exist for any other
+// module that still fetches; the brave use-case must NOT hit them.
+const CDP_URL = process.env.CDP_URL || 'http://127.0.0.1:9222'
+const fetchMock = vi.fn((url) => {
+  if (url === `${CDP_URL}/json`) {
     return Promise.resolve({
       ok: true,
       json: () => Promise.resolve([
@@ -29,11 +47,12 @@ vi.stubGlobal('fetch', vi.fn((url) => {
       ]),
     })
   }
-  if (url.startsWith('http://127.0.0.1:9222/json/activate/')) {
+  if (url.startsWith(`${CDP_URL}/json/activate/`)) {
     return Promise.resolve({ ok: true })
   }
   return Promise.reject(new Error(`unmocked url: ${url}`))
-}))
+})
+vi.stubGlobal('fetch', fetchMock)
 
 // Mock fs to avoid vault dependency
 vi.mock('fs', () => {
@@ -252,5 +271,37 @@ describe('POST /api/study/self-score (restored study endpoints)', () => {
     const res = await request(app).post('/api/study/self-score').send({})
     expect(res.status).toBe(400)
     expect(res.body).toHaveProperty('error')
+  })
+})
+
+// ============================================================
+// B1 + B2 — env-configurable service URLs + port-injected CDP reads
+// ============================================================
+describe('brave use-case DIP (B1 + B2)', () => {
+  it('getTabs + activateTab go through the injected port, never global fetch', async () => {
+    const port = {
+      listTabs: vi.fn(() => Promise.resolve([{ id: 'tabX', title: 'Port Page', url: 'https://port.test' }])),
+      activateTab: vi.fn(() => Promise.resolve(true)),
+    }
+    const useCases = createBraveUseCases({ brave: port })
+    fetchMock.mockClear()
+    const tabs = await useCases.getTabs()
+    const activated = await useCases.activateTab('tabX')
+    expect(tabs).toEqual([{ id: 'tabX', title: 'Port Page', url: 'https://port.test' }])
+    expect(activated).toEqual({ success: true })
+    expect(port.listTabs).toHaveBeenCalledTimes(1)
+    expect(port.activateTab).toHaveBeenCalledWith('tabX')
+    // the use-case must not reach CDP HTTP endpoints directly
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('container-routed POST /brave/activate flows through the adapter port', async () => {
+    const inst = braveAdapterInstances.at(-1)
+    expect(inst).toBeDefined()
+    inst.activateTab.mockClear()
+    const res = await request(app).post('/api/brave/activate').send({ targetId: 'tab1' })
+    expect(res.status).toBe(200)
+    expect(inst.activateTab).toHaveBeenCalledWith('tab1')
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

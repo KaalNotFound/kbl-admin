@@ -1,7 +1,8 @@
 import puppeteer from 'puppeteer-core';
 
-const CDP_URL = 'http://127.0.0.1:9222';
-const WA_URL = 'https://web.whatsapp.com';
+// B1: env-configurable service URLs (same defaults as before).
+const CDP_URL = process.env.CDP_URL || 'http://127.0.0.1:9222';
+const WA_URL = process.env.WA_URL || 'https://web.whatsapp.com';
 
 let _browser = null;
 let _cdpSession = null;
@@ -11,6 +12,22 @@ function sleep(ms) {
 }
 
 const CDP_DISCOVERY_TIMEOUT_MS = 5000;
+// Bounded the same way as discovery (OWASP A10/LLM05): a hung Brave must
+// not stall the route chain.
+const CDP_TARGET_TIMEOUT_MS = 5000;
+
+/**
+ * GET a DevTools HTTP endpoint (bounded fetch, same shape the brave
+ * use-case used to issue directly before B2 dipped it behind this port).
+ */
+async function cdpRequest(pathname) {
+  const result = await fetch(new URL(pathname, CDP_URL).toString(), {
+    method: 'GET',
+    signal: AbortSignal.timeout(CDP_TARGET_TIMEOUT_MS),
+  });
+  if (!result.ok) throw new Error('HTTP ' + result.status);
+  return result;
+}
 
 /**
  * Resolve the DevTools WebSocket endpoint behind a bounded fetch.
@@ -77,6 +94,20 @@ export class BraveCdpAdapter {
       try { _browser.disconnect(); } catch (e) { /* ignore */ }
       _browser = null;
     }
+  }
+
+  // GET {CDP_URL}/json — DevTools target list (B2: the use-case consumes
+  // this through the port instead of issuing its own fetch).
+  async listTabs() {
+    return await (await cdpRequest('/json')).json();
+  }
+
+  // GET {CDP_URL}/json/activate/:targetId — bring the tab to front
+  // (identical request the use-case used to make directly; true on 2xx).
+  async activateTab(targetId) {
+    if (!targetId) throw new Error('targetId es requerido');
+    await cdpRequest('/json/activate/' + encodeURIComponent(targetId));
+    return true;
   }
 
   async scanUnreadChats() {
