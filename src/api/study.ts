@@ -10,14 +10,6 @@ export function fetchStudyHistory(): Promise<StudyHistoryResponse> {
   return fetchJSON<StudyHistoryResponse>(`/api/study/history`)
 }
 
-export function submitStudyAnswer(question: string, answer: string, sourceNote: string, answerType: string): Promise<{ success: boolean; path?: string; error?: string }> {
-  return fetch(`/api/study/answer`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, answer, sourceNote, answerType }),
-  }).then(r => r.json())
-}
-
 // Flow Study: request agent feedback
 export function requestStudyFeedback(session: {
   sessionId: string

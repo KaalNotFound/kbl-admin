@@ -42,25 +42,6 @@ export function fetchActiveRecallStats(signal?: AbortSignal): Promise<ActiveReca
   return fetchJSON<ActiveRecallStoreStats>(`/api/active-recall/stats`, signal)
 }
 
-export function fetchActiveRecallIngest(): Promise<{ success: boolean; imported: number; stats: ActiveRecallStoreStats }> {
-  return fetch(`/api/active-recall/ingest`, { method: 'POST' }).then(r => r.json())
-}
-
-export function injectActiveRecallQuestion(params: {
-  question: string
-  type?: string
-  concept?: string | null
-  definition?: string | null
-  sourceNote?: string | null
-  metaType?: string
-}): Promise<{ success: boolean; seeded: number; stats: ActiveRecallStoreStats }> {
-  return fetch(`/api/active-recall/inject`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-  }).then(r => r.json())
-}
-
 export function seedActiveRecallQuestions(questions: Array<{
   question: string
   type: string

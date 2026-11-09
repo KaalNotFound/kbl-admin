@@ -1,17 +1,13 @@
-import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { parseArray } from '../../algorithms/input'
-import type { AlgorithmMeta, SortFrame } from '../../algorithms/frameTypes'
+import type { AlgorithmMeta } from '../../algorithms/frameTypes'
 import PseudoCodePanel from './PseudoCodePanel'
 
 /**
  * Shared frame player for every sort algorithm (issue #2, slice 1).
  * Owns the seed array + playback state and renders the input card, bars,
  * guided counters, pseudo-code execution point, big-O table and movement
- * matrix from ONE implementation. The main row shows the visualization and
- * the execution point side by side; `renderAside` lets a specific algorithm
- * inject its own extra panel (e.g. the Bubble state trace) fed with the
- * current frame.
+ * matrix from ONE implementation.
  */
 
 type Speed = 'slow' | 'normal' | 'fast'
@@ -23,10 +19,9 @@ const DEFAULT_ARRAY = [5, 1, 4, 2, 8]
 
 interface SortVisualizerProps {
   meta: AlgorithmMeta
-  renderAside?: (frame: SortFrame) => ReactNode
 }
 
-export default function SortVisualizer({ meta, renderAside }: SortVisualizerProps) {
+export default function SortVisualizer({ meta }: SortVisualizerProps) {
   const [inputText, setInputText] = useState(DEFAULT_ARRAY.join(', '))
   const [array, setArray] = useState<number[]>(DEFAULT_ARRAY)
   const [error, setError] = useState<string | null>(null)
@@ -274,7 +269,7 @@ export default function SortVisualizer({ meta, renderAside }: SortVisualizerProp
         )}
       </div>
 
-      {/* Secondary row: guided counters + big-O table (left) + per-algorithm aside (right) */}
+      {/* Secondary row: guided counters + big-O table */}
       <div className="flex flex-wrap gap-5">
         <div className="flex-1 min-w-[280px] bg-card rounded-xl p-4 space-y-4">
           <div>
@@ -338,8 +333,6 @@ export default function SortVisualizer({ meta, renderAside }: SortVisualizerProp
             </p>
           </div>
         </div>
-
-        {renderAside && <div className="flex-1 min-w-[300px] space-y-4">{renderAside(step)}</div>}
       </div>
 
       {/* Movement matrix */}
