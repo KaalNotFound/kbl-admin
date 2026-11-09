@@ -23,6 +23,32 @@ function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
+const QUESTION_LIMITS = { question: 2000, answer: 4000, module: 200, source: 500, tags: 20 }
+const INVALID_QUESTION = { status: 400, error: 'Formato de pregunta inválido.' }
+
+// Allowlist normalization (API3 mass assignment): only known, bounded fields
+// reach the store — every other client-supplied key is dropped.
+function normalizeQuestion(raw) {
+  const question = typeof raw.question === 'string'
+    ? raw.question.trim().slice(0, QUESTION_LIMITS.question)
+    : '';
+  if (!question) return null;
+  const out = { question };
+  if (raw.answer !== undefined && raw.answer !== null) {
+    out.answer = String(raw.answer).slice(0, QUESTION_LIMITS.answer);
+  }
+  if (raw.module !== undefined && raw.module !== null) {
+    out.module = String(raw.module).slice(0, QUESTION_LIMITS.module);
+  }
+  if (raw.source !== undefined && raw.source !== null) {
+    out.source = String(raw.source).slice(0, QUESTION_LIMITS.source);
+  }
+  if (Array.isArray(raw.tags)) {
+    out.tags = raw.tags.filter((t) => typeof t === 'string').slice(0, QUESTION_LIMITS.tags);
+  }
+  return out;
+}
+
 export function createActiveRecallUseCases({ store, defaultIngestDir }) {
   /**
    * POST /active-recall/review
@@ -117,18 +143,21 @@ export function createActiveRecallUseCases({ store, defaultIngestDir }) {
       return { status: 400, error: 'Máximo 500 preguntas por lote.' };
     }
     if (!payload.questions.every(isPlainObject)) {
-      return { status: 400, error: 'Cada pregunta debe ser un objeto válido.' };
+      return { status: 400, error: INVALID_QUESTION.error };
     }
-    return { ok: true, value: { seeded: store.seedQuestions(payload.questions) } };
+    const questions = payload.questions.map(normalizeQuestion);
+    if (questions.some((q) => q === null)) {
+      return { status: 400, error: INVALID_QUESTION.error };
+    }
+    return { ok: true, value: { seeded: store.seedQuestions(questions) } };
   }
 
   /** POST /active-recall/inject — single-question variant of seed. */
   async function inject(payload = {}) {
-    if (!isPlainObject(payload)) {
-      return { status: 400, error: 'La pregunta debe ser un objeto válido.' };
-    }
-    if (!payload.question) return { status: 400, error: 'question is required' };
-    return { ok: true, value: { seeded: store.seedQuestions([payload]) } };
+    if (!isPlainObject(payload)) return { status: 400, error: INVALID_QUESTION.error };
+    const question = normalizeQuestion(payload);
+    if (!question) return { status: 400, error: INVALID_QUESTION.error };
+    return { ok: true, value: { seeded: store.seedQuestions([question]) } };
   }
 
   return { submitReview, getDue, getStats, getAll, getDueWithStats, getQuestionById, submit, ingest, seed, inject };

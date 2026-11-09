@@ -21,6 +21,7 @@
  */
 import path from 'path';
 import { Result, ValidationError, InfrastructureError } from '#domain';
+import { sanitizeFrontmatterValue } from '../../lib/frontmatter-guard.mjs';
 
 export function createCaptureNote({ contentStore, eventBus, vault }) {
   return async function captureNote(dto) {
@@ -131,14 +132,14 @@ export function stripDailyFieldLines(content, fieldKey) {
  *  finanzas parser (parseComprasFile) consumes. */
 function buildCompraNote(dto, date) {
   const fields = dto.fields || {};
-  const comercio = String(fields.comercio ?? '').trim();
-  const producto = String(fields.producto ?? '').trim() || firstContentLine(dto.content);
-  const cantidad = fields.cantidad !== undefined && fields.cantidad !== null
-    && String(fields.cantidad).trim() !== ''
-    ? String(fields.cantidad).trim()
-    : '1';
-  const precioTotal = String(fields.precio_total ?? '').trim();
-  const categoria = String(fields.categoria ?? '').trim();
+  // Values are parser-trusted `key:: value` lines — sanitize every client
+  // string so it cannot forge an extra field (frontmatter injection).
+  const comercio = sanitizeFrontmatterValue(fields.comercio);
+  const producto = sanitizeFrontmatterValue(fields.producto)
+    || sanitizeFrontmatterValue(firstContentLine(dto.content));
+  const cantidad = sanitizeFrontmatterValue(fields.cantidad) || '1';
+  const precioTotal = sanitizeFrontmatterValue(fields.precio_total);
+  const categoria = sanitizeFrontmatterValue(fields.categoria);
 
   const frontmatter = buildFrontmatter({
     'entity_type::': 'compra',

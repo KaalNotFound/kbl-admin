@@ -9,6 +9,7 @@
  * Result pattern (AGENTS §2.3) en createItem (validación de input del POST).
  */
 import path from 'path';
+import { sanitizeFrontmatterValue, sanitizeMultilineField } from '../../lib/frontmatter-guard.mjs';
 
 const VALID_CATEGORIES = ['despensa','heladera','freezer','limpieza','higiene','herramientas','documentos','medicamentos','otros'];
 const SEVEN_DAYS = 7 * 86400000;
@@ -119,7 +120,9 @@ export function createInventoryUseCases({ vault }) {
       const filePath = path.join(inventoryDir, filename);
 
       const expiryLine = expiry ? `expiry:: ${expiry}\n` : '';
-      const notesLine = notes && notes.trim() ? `notes:: ${notes.trim()}\n` : '';
+      // notes/category reach parser-trusted `key:: value` lines — sanitize so
+      // a newline or `::` in the value cannot forge an extra field.
+      const notesLine = notes && notes.trim() ? `notes:: ${sanitizeMultilineField(notes)}\n` : '';
 
       const note = `---
 created: ${now.toISOString()}
@@ -131,7 +134,7 @@ entity_type:: inventory_item
 > item de inventario creado desde el dashboard
 
 name:: ${name.trim()}
-category:: ${category}
+category:: ${sanitizeFrontmatterValue(category)}
 quantity:: ${quantity ?? 1}
 unit:: ${unit || 'unidades'}
 min_stock:: ${min_stock ?? 1}

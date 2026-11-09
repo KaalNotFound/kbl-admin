@@ -3,6 +3,30 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-11-09 — Security perimeter slice 3: data integrity at trust boundaries (issue #3)
+
+Frontmatter injection, LLM output validation and seed/inject mass assignment.
+
+- New `server/lib/frontmatter-guard.mjs`: `sanitizeFrontmatterValue` collapses
+  newlines/control chars, neutralizes `::` → `: :`, trims, caps at 500, so a
+  client value can never forge a `key::` field; `sanitizeMultilineField`
+  preserves newlines but escapes field-looking lines (leading space), cap 4000.
+- `capture-note` compra fields (comercio/producto/cantidad/precio_total/
+  categoria) and `vault-inventory` category/notes now go through the guard.
+  Normal values are byte-identical; the parser format stays intact.
+- `mastery.js` exports pure `normalizeEvaluation`: validates the parsed LLM
+  verdict at the boundary (score must be a finite number or the caller falls
+  back to the basic heuristic; clamped 0..100; feedback ≤2000, strengths/gaps
+  ≤10 items × ≤300, challenge ≤500 or null) — prompt is data, not authority
+  (LLM01/LLM09). `basicEvaluation` clamps defensively too.
+- `active-recall` seed/inject normalize each question to an allowlist
+  (question ≤2000 required, answer/module/source/tags bounded); unknown fields
+  are dropped, invalid entries → 400 `Formato de pregunta inválido.`
+  (API3). Client-sent `type/concept/definition` are no longer persisted.
+
+**Gates:** suite 256 → 273/273 green (17 new tests in
+`server/__tests__/security-data-integrity.test.js`). `npx vite build` OK.
+
 ## 2026-11-08 — Security perimeter slice 2 (issue #3)
 
 Contained filesystem ingest and capped request payloads.

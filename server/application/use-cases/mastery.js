@@ -97,11 +97,47 @@ function basicEvaluation(concept, explanation) {
   if (hasAnalogies) score += 15
 
   return {
-    score: Math.min(100, score),
+    score: Math.max(0, Math.min(100, score)),
     feedback: 'Evaluación básica (NotebookLM no disponible). Subí el score manualmente si es necesario.',
     strengths: len > 100 ? ['Explicación extensa'] : [],
     gaps: len < 100 ? ['Explicación muy corta'] : ['NotebookLM offline — evaluación limitada'],
     challenge: '',
+  }
+}
+
+// ─── LLM output boundary (LLM01/LLM09) ──────────────────────────────────────
+// The prompt is data, not authority: user text shapes it (injection can drive
+// arbitrary verdicts), and the model's answer is untrusted input. Everything
+// parsed from it is validated and clamped HERE, before it reaches the store
+// or the response — a persisted score ALWAYS satisfies
+// 0 <= score <= 100 && Number.isFinite(score).
+
+const EVAL_LIMITS = { feedback: 2000, listItems: 10, listItem: 300, challenge: 500 }
+
+function clampStringList(value, maxItemLen) {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item) => typeof item === 'string')
+    .slice(0, EVAL_LIMITS.listItems)
+    .map((item) => item.slice(0, maxItemLen))
+}
+
+/**
+ * Pure: validate/clamp a parsed socratic evaluation. Returns null when the
+ * score is not a finite number — the caller then uses the basic fallback.
+ */
+export function normalizeEvaluation(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const { score } = raw
+  if (typeof score !== 'number' || !Number.isFinite(score)) return null
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    feedback: typeof raw.feedback === 'string' ? raw.feedback.slice(0, EVAL_LIMITS.feedback) : '',
+    strengths: clampStringList(raw.strengths, EVAL_LIMITS.listItem),
+    gaps: clampStringList(raw.gaps, EVAL_LIMITS.listItem),
+    challenge: typeof raw.challenge === 'string' && raw.challenge.trim()
+      ? raw.challenge.slice(0, EVAL_LIMITS.challenge)
+      : null,
   }
 }
 
@@ -269,10 +305,12 @@ export function createMasteryUseCases({ store, vault, nlm }) {
     try {
       const prompt = buildSocraticPrompt(concept, operatorExplanation, sourceNote)
       const nlmResult = await nlm.request('POST', '/ask', { question: prompt })
-      evaluation = parseSocraticEvaluation(nlmResult?.data?.answer || '')
+      // Boundary: normalize (or reject) the LLM verdict before it persists.
+      evaluation = normalizeEvaluation(parseSocraticEvaluation(nlmResult?.data?.answer || ''))
     } catch {
-      evaluation = basicEvaluation(concept, operatorExplanation)
+      evaluation = null
     }
+    if (!evaluation) evaluation = basicEvaluation(concept, operatorExplanation)
 
     const result = store.validateConcept({
       concept,
