@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { fetchInventory, createInventoryItem } from '../api'
 import type { InventoryCategory, InventoryItem, InventoryResponse } from '../types'
 import { INVENTORY_CATEGORIES } from '../types'
+import { handleDialogKeyDown } from './ui/dialogKeyboard'
 
 export default function InventoryDashboard() {
   const [data, setData] = useState<InventoryResponse | null>(null)
@@ -12,6 +13,9 @@ export default function InventoryDashboard() {
   const [form, setForm] = useState({ name: '', category: 'otros', quantity: 1, unit: 'unidades', min_stock: 1, expiry: '', notes: '' })
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const openerRef = useRef<HTMLButtonElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const wasOpen = useRef(false)
 
   const loadInventory = () => {
     fetchInventory()
@@ -21,6 +25,18 @@ export default function InventoryDashboard() {
   }
 
   useEffect(() => { loadInventory() }, [])
+
+  const closeForm = () => {
+    setShowForm(false)
+    setFormError('')
+  }
+
+  // APG dialog: first field focus on open; focus returns to the opener on close.
+  useEffect(() => {
+    if (showForm) nameInputRef.current?.focus()
+    if (!showForm && wasOpen.current) openerRef.current?.focus()
+    wasOpen.current = showForm
+  }, [showForm])
 
   const catLookup: Record<string, string> = {}
   for (const c of INVENTORY_CATEGORIES) catLookup[c.id] = c.label
@@ -182,6 +198,7 @@ export default function InventoryDashboard() {
         <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider mb-3">Acciones</h3>
         <div className="flex flex-wrap gap-3">
           <button
+            ref={openerRef}
             onClick={() => setShowForm(true)}
             className="px-4 py-2 text-xs font-medium rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors"
           >
@@ -196,12 +213,19 @@ export default function InventoryDashboard() {
       {/* Add Item Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => { setShowForm(false); setFormError('') }} />
-          <div className="relative bg-card rounded-2xl shadow-xl border border-border-light w-full max-w-lg p-5 animate-fade-in">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={closeForm} />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="inventory-form-title"
+            onKeyDown={e => handleDialogKeyDown(e, { onClose: closeForm })}
+            className="relative bg-card rounded-2xl shadow-xl border border-border-light w-full max-w-lg p-5 animate-fade-in"
+          >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-text-primary">Agregar Item</h3>
+              <h3 id="inventory-form-title" className="text-sm font-semibold text-text-primary">Agregar Item</h3>
               <button
-                onClick={() => { setShowForm(false); setFormError('') }}
+                onClick={closeForm}
+                aria-label="Cerrar"
                 className="text-text-tertiary hover:text-text-primary transition-colors text-lg leading-none"
               >
                 ✕
@@ -216,8 +240,10 @@ export default function InventoryDashboard() {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-text-secondary mb-1">Nombre *</label>
+                <label htmlFor="inv-name" className="block text-xs text-text-secondary mb-1">Nombre *</label>
                 <input
+                  id="inv-name"
+                  ref={nameInputRef}
                   type="text"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
@@ -305,7 +331,7 @@ export default function InventoryDashboard() {
 
             <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-border-light">
               <button
-                onClick={() => { setShowForm(false); setFormError('') }}
+                onClick={closeForm}
                 className="px-4 py-2 text-xs font-medium rounded-lg bg-surface text-text-secondary hover:bg-border-light transition-colors"
               >
                 Cancelar

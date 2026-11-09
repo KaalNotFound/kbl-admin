@@ -501,7 +501,7 @@ export default function ShadowStudy({ data, filter }: Props) {
               <div key={card.id}
                 className="bg-card rounded-xl p-4 cursor-pointer hover:bg-surface/50 transition-colors"
                 onClick={() => toggleReveal(card.id)}
-                onKeyDown={e => { if (e.key === 'Enter') toggleReveal(card.id) }}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleReveal(card.id) } }}
                 role="button" tabIndex={0}
               >
                 <div className="flex items-start gap-3">
@@ -826,6 +826,7 @@ export default function ShadowStudy({ data, filter }: Props) {
               <span className="text-warning font-medium">⏰ {storeStats.dueCount} pendientes</span>
             )}
             <button className="px-2 py-0.5 bg-card border border-border-light rounded hover:text-text-primary transition-colors"
+              aria-label="Recargar estadísticas"
               onClick={async () => {
                 const s = await fetchActiveRecallStats()
                 setStoreStats(s)

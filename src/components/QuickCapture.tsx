@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { fetchEntityCatalog, sendCapture } from '../api'
 import type { CaptureFields, CaptureResponse } from '../api/vault'
 import type { EntityCatalogEntry } from '../types'
+import { handleDialogKeyDown } from './ui/dialogKeyboard'
 
 // Builtin quick types: garantizan que compra/food SIEMPRE existan en el
 // selector (el catálogo del vault es dinámico y puede no traerlos), así la
@@ -41,6 +42,14 @@ export default function QuickCapture() {
   const [catalogLoaded, setCatalogLoaded] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const openerRef = useRef<HTMLButtonElement>(null)
+  const wasOpen = useRef(false)
+
+  // APG dialog: when the modal closes (any path), focus returns to the opener.
+  useEffect(() => {
+    if (!open && wasOpen.current) openerRef.current?.focus()
+    wasOpen.current = open
+  }, [open])
 
   // Structured fields per type (phase 3 triage)
   const [comercio, setComercio] = useState('')
@@ -136,9 +145,6 @@ export default function QuickCapture() {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      closeAll()
-    }
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
       if (content.trim() && !(selectedType === 'compra' && !comercio.trim())) handleSubmit()
@@ -175,9 +181,11 @@ export default function QuickCapture() {
     <>
       {/* FAB */}
       <button
+        ref={openerRef}
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-accent text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center text-xl"
         title="Captura rápida (N)"
+        aria-label="Captura rápida"
       >
         ✦
       </button>
@@ -186,11 +194,18 @@ export default function QuickCapture() {
       {open && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={closeAll} />
-          <div className="relative bg-card rounded-2xl shadow-xl border border-border-light w-full max-w-lg p-5 animate-fade-in">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quick-capture-title"
+            onKeyDown={e => handleDialogKeyDown(e, { onClose: closeAll })}
+            className="relative bg-card rounded-2xl shadow-xl border border-border-light w-full max-w-lg p-5 animate-fade-in"
+          >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-text-primary">Captura rápida</h3>
+              <h3 id="quick-capture-title" className="text-sm font-semibold text-text-primary">Captura rápida</h3>
               <button
                 onClick={closeAll}
+                aria-label="Cerrar"
                 className="text-text-tertiary hover:text-text-primary transition-colors text-lg leading-none"
               >
                 ✕
@@ -253,20 +268,26 @@ export default function QuickCapture() {
             {/* Structured fields — compra (ticket triage) */}
             {isCompra && (
               <div className="grid grid-cols-[1fr_0.5fr_0.6fr] gap-2 mb-3">
+                <label htmlFor="qc-comercio" className="sr-only">Comercio</label>
                 <input
+                  id="qc-comercio"
                   value={comercio}
                   onChange={e => setComercio(e.target.value)}
                   placeholder="Comercio (requerido)"
                   className="bg-page border border-border-light rounded-lg px-2.5 py-1.5 text-xs text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent transition-all"
                 />
+                <label htmlFor="qc-precio" className="sr-only">Precio</label>
                 <input
+                  id="qc-precio"
                   value={precio}
                   onChange={e => setPrecio(e.target.value)}
                   placeholder="Precio (42,75)"
                   inputMode="decimal"
                   className="bg-page border border-border-light rounded-lg px-2.5 py-1.5 text-xs text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent transition-all [font-variant-numeric:tabular-nums]"
                 />
+                <label htmlFor="qc-categoria" className="sr-only">Categoría</label>
                 <input
+                  id="qc-categoria"
                   value={categoria}
                   onChange={e => setCategoria(e.target.value)}
                   placeholder="Categoría (opcional)"
@@ -278,7 +299,9 @@ export default function QuickCapture() {
             {/* Structured fields — food (Daily slot upsert) */}
             {isFood && (
               <div className="grid grid-cols-3 gap-2 mb-3">
+                <label htmlFor="qc-slot" className="sr-only">Franja</label>
                 <select
+                  id="qc-slot"
                   value={slot}
                   onChange={e => setSlot(e.target.value)}
                   className="bg-page border border-border-light rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent transition-all"
@@ -287,14 +310,20 @@ export default function QuickCapture() {
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
+                <label htmlFor="qc-hora" className="sr-only">Hora</label>
                 <input
+                  id="qc-hora"
                   type="time"
+                  aria-label="Hora"
                   value={hora}
                   onChange={e => setHora(e.target.value)}
                   className="bg-page border border-border-light rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent transition-all [font-variant-numeric:tabular-nums]"
                 />
+                <label htmlFor="qc-fecha" className="sr-only">Fecha</label>
                 <input
+                  id="qc-fecha"
                   type="date"
+                  aria-label="Fecha"
                   value={captureDate}
                   onChange={e => setCaptureDate(e.target.value)}
                   className="bg-page border border-border-light rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent transition-all [font-variant-numeric:tabular-nums]"

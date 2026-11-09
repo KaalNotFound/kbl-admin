@@ -1146,3 +1146,37 @@ they were unreferenced:
   advances on the original) and is defensively reset before each use.
 
 **Gates:** `npx vitest run` full suite green.
+
+## 2026-11-09 — Pre-deploy slice: dialog semantics, focus management, finance dark canvas (issue #4, C2+C4)
+
+Accessibility pass over the shared modal pattern and the finance tab trio:
+
+- **APG dialog semantics** (`QuickCapture`, `InventoryDashboard` add-item):
+  `role="dialog"` + `aria-modal` + `aria-labelledby` on the panel, container
+  scoped Escape (QuickCapture's Escape lived on the textarea only), Tab
+  trap cycling at both ends, first-input focus on open, and focus restored
+  to the opener on every close path. Shared logic in
+  `src/components/ui/dialogKeyboard.ts`; per-component opener refs drive
+  restore via a small `wasOpen` effect.
+- **Icon-only buttons** got accessible names: QuickCapture FAB ("Captura
+  rápida") and both ✕ closers ("Cerrar"), ShadowStudy ↻ ("Recargar
+  estadísticas").
+- **sr-only labels** wired via htmlFor/id: Compras search input + store
+  select, QuickCapture structured compra (comercio/precio/categoría) and
+  food (franja/hora/fecha) fields.
+- **Keyboard**: ShadowStudy flashcard `role="button"` div now accepts Space
+  alongside Enter; global `:focus-visible` ring added in index.css using
+  the existing `--accent` token (no new colors).
+- **Finance trio contrast (C2, WCAG 1.4.3)**: the tab was designed on a warm
+  dark canvas but hardcoded text hexes (`#c8b8a8`, `#a0907e`, `#e0a0a0`,
+  `#f0e5d8`) sat on the global light-theme white at ~1.9:1. Fix preserves
+  the intended look with a scoped `.fin-dark` class (index.css) that pins
+  the trio's design palette as CSS vars regardless of global theme; raw
+  text hexes replaced by the existing token utilities
+  (`text-text-primary/secondary/tertiary`, `text-danger`, `bg-warning`,
+  `bg-text-tertiary`). Charts keep their JS hex fills — they sit on the
+  now-pinned dark canvas in both themes. Error banners render a dark
+  `bg-page/95` chip inside `.fin-dark` (light-theme text was 2.2:1);
+  badge hue follows `--danger` (#e08a7a family, the trio's own red).
+
+**Gates:** `npx vitest run` 330/330 green (+7 new modal/label tests), `npx vite build` OK.

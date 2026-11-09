@@ -320,3 +320,31 @@ input::placeholder {
     animation: none;
   }
 }
+
+/* ─── Keyboard focus visibility (WCAG 2.4.7, issue #4 C4) ─── */
+:where(button, [role="button"], a, input, select, textarea):focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+}
+
+/* ─── Finance trio scoped dark canvas (issue #4 C2, WCAG 1.4.3) ───
+   The finanzas/compras/patrimonio tabs are designed on a warm dark canvas
+   (cream text, amber dividers). This container pins the dark palette so the
+   token utilities inside resolve to the intended hues REGARDLESS of the
+   global theme — on light theme first paint the text would otherwise sit on
+   white at ~1.9:1. Values are the trio's original design hexes. */
+.fin-dark {
+  --text-primary: 240 229 216;   /* #f0e5d8 */
+  --text-secondary: 200 184 168; /* #c8b8a8 */
+  --text-tertiary: 160 144 126;  /* #a0907e */
+  --bg-page: 15 11 15;           /* #0f0b0f */
+  --bg-card: 30 20 32;           /* #1e1420 */
+  --bg-hover-alt: 42 30 42;      /* #2a1e2a */
+  --border: 232 184 75;          /* #e8b84b — trio borders are amber at low alpha */
+  --accent: 91 155 213;          /* #5b9bd5 */
+  --accent-alt: 126 200 227;     /* #7ec8e3 */
+  --positive: 143 202 160;       /* #8fcab0 */
+  --warning: 232 184 75;         /* #e8b84b */
+  --danger: 224 138 122;         /* #e08a7a */
+  color-scheme: dark;
+}
