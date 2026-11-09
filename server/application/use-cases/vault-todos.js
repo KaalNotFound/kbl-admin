@@ -21,7 +21,6 @@
  * the SSOT and external readers (Obsidian, CLI mirrors) see the same data.
  */
 import path from 'path'
-import fs from 'fs'
 
 // --- Pending.md parsing (mirror verbatim de 07 - SCRIPTS/tools/todo-crud.mjs) ---
 
@@ -96,10 +95,11 @@ function sectionId(s) {
 
 /**
  * createTodosUseCases — factory del dominio TODOS/Vault Metrics.
- * @param {{ VAULT_ROOT: string, readFile: Function, scanAreaRecursive: Function, obsidianUrl?: Function }} vault
+ * @param {{ VAULT_ROOT: string, readFile: Function, scanAreaRecursive: Function,
+ *            writeFileAtomic: Function, obsidianUrl?: Function }} vault
  */
 export function createTodosUseCases({ vault }) {
-  const { VAULT_ROOT, readFile, scanAreaRecursive, obsidianUrl } = vault
+  const { VAULT_ROOT, readFile, scanAreaRecursive, writeFileAtomic, obsidianUrl } = vault
 
   // Data provenance (Phase 1): exposed SSOT files as {file, obsidian_url}.
   // obsidianUrl is injected via the vault adapter API (no direct lib/ import
@@ -214,8 +214,9 @@ export function createTodosUseCases({ vault }) {
    *   - EXACTLY the resolved item's state-marker line changes (checkbox
    *     bracket preferred over Estado value); every other byte is preserved,
    *     including \r\n endings;
-   *   - atomic write: `<file>.tmp` + fs.renameSync (a crash mid-write leaves
-   *     the original intact, never a half-flipped file);
+   *   - atomic write (via the vault port): `<file>.tmp` + rename, owned by
+   *     the adapter so a crash mid-write leaves the original intact, never
+   *     a half-flipped file;
    *   - mismatch between render and reality → clean 'todo not found' /
    *     'ambiguous todo match'; single documented retry of the read+match+
    *     flip+write cycle on transient I/O failure.
@@ -259,14 +260,11 @@ export function createTodosUseCases({ vault }) {
 
         rawLines[flipIndex] = flip.next
 
-        // Atomic write-back: temp file in the same dir + rename over original.
-        const tmp = `${file}.tmp`
-        try {
-          fs.writeFileSync(tmp, rawLines.join('\n'), 'utf-8')
-          fs.renameSync(tmp, file)
-        } catch (e) {
-          try { fs.rmSync(tmp, { force: true }) } catch { /* best effort cleanup */ }
-          throw e
+        // Atomic write-back through the vault port (B8): same crash-safe
+        // semantics as before (temp file + rename, cleanup on failure),
+        // the use-case stays fs-free.
+        if (!writeFileAtomic(file, rawLines.join('\n'))) {
+          throw new Error('write failed')
         }
 
         // Refreshed item shape from the post-write parse (falls back to the

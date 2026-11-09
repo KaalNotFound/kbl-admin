@@ -94,6 +94,7 @@ function createContainer(opts = {}) {
     existsSync: vaultFs.existsSync,
     fileInfo: vaultFs.fileInfo,
     writeFile: vaultFs.writeFile,
+    writeFileAtomic: vaultFs.writeFileAtomic,
     ensureDir: vaultFs.ensureDir,
     getQueueCounts: vaultFs.getQueueCounts,
     scanAreaRecursive: vaultFs.scanAreaRecursive,

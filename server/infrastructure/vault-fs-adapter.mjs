@@ -123,6 +123,25 @@ export function writeFile(filePath, content) {
 }
 
 /**
+ * Crash-safe write (B8): temp file in the same dir + rename over the target,
+ * so a mid-write crash never leaves a half-written file. Best-effort cleanup
+ * of the temp file on failure. Owned by the adapter (where fs lives) so
+ * use-cases stay fs-free. Returns bool.
+ */
+export function writeFileAtomic(filePath, content) {
+  const tmp = `${filePath}.tmp`
+  try {
+    fs.writeFileSync(tmp, content, 'utf-8')
+    fs.renameSync(tmp, filePath)
+    return true
+  } catch (e) {
+    try { fs.rmSync(tmp, { force: true }) } catch { /* best-effort cleanup */ }
+    console.error('[vault] writeFileAtomic: error writing', filePath, e.message)
+    return false
+  }
+}
+
+/**
  * Generate a URL-safe slug from text
  */
 export function generateSlug(text) {
