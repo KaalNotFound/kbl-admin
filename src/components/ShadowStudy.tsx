@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import type { StudyData, SelfScore, ActiveRecallStoreStats } from '../types'
 import { submitActiveRecall, fetchActiveRecallStats, fetchActiveRecallAll, seedActiveRecallQuestions, requestStudyFeedback, submitSelfScore } from '../api'
+import { shouldSeed, fingerprint, type SeedRef } from '../lib/seedGuard'
 
 // ─── Types ───
 
@@ -153,52 +154,70 @@ export default function ShadowStudy({ data, filter }: Props) {
 
   const cards = useMemo(() => computeCards(data, filter), [data, filter])
 
+  // Seed-once guard (issue #4 A3): the StudyDashboard poll produces a new `data`
+  // identity every 30s, which used to re-POST /active-recall/seed (plus 2 GETs)
+  // even when the view target had not changed. The guard keys on the CONTENT
+  // (filter + card count + text fingerprint), not object identity.
+  const seedRef = useRef<SeedRef>({ lastKey: null })
+  const dataId = useMemo(() => fingerprint(cards.map(c => c.text)), [cards])
+  const [seedError, setSeedError] = useState<string | null>(null)
+
   // Seed store with cards from this view + hydrate sessionResults
   useEffect(() => {
+    if (!shouldSeed(seedRef.current, filter, cards, dataId)) return
+    const controller = new AbortController()
     const seedAndHydrate = async () => {
-      // 1. Seed missing questions from current cards
-      if (cards.length > 0) {
-        await seedActiveRecallQuestions(cards.map(c => ({
-          question: c.text,
-          type: c.type,
-          concept: c.linkedConcept,
-          definition: c.linkedDefinition,
-          sourceNote: c.note,
-          sourceBloque: c.bloque,
-        }))).catch(() => {})
-      }
-
-      // 2. Fetch fresh stats after seeding
-      const stats = await fetchActiveRecallStats().catch(() => null)
-      if (stats) setStoreStats(stats)
-
-      // 3. Fetch all store questions to hydrate sessionResults
-      const all = await fetchActiveRecallAll().catch(() => null)
-      if (all?.questions?.length) {
-        const storeByQuestion = new Map<string, { lastScore: string | null; due: boolean }>()
-        for (const q of all.questions) {
-          storeByQuestion.set(q.question.trim().toLowerCase(), { lastScore: q.lastScore, due: q.due })
+      try {
+        // 1. Seed missing questions from current cards
+        if (cards.length > 0) {
+          await seedActiveRecallQuestions(cards.map(c => ({
+            question: c.text,
+            type: c.type,
+            concept: c.linkedConcept,
+            definition: c.linkedDefinition,
+            sourceNote: c.note,
+            sourceBloque: c.bloque,
+          })), controller.signal)
         }
-        // Pre-populate sessionResults for cards that were reviewed and NOT due
-        const prePopulated = new Map<string, SelfScore>()
-        for (const card of cards) {
-          const storeQ = storeByQuestion.get(card.text.trim().toLowerCase())
-          if (storeQ && storeQ.lastScore && !storeQ.due &&
-              (storeQ.lastScore === 'correct' || storeQ.lastScore === 'partial' || storeQ.lastScore === 'incorrect')) {
-            prePopulated.set(card.id, storeQ.lastScore)
+
+        // 2. Fetch fresh stats after seeding
+        const stats = await fetchActiveRecallStats(controller.signal)
+        setStoreStats(stats)
+
+        // 3. Fetch all store questions to hydrate sessionResults
+        const all = await fetchActiveRecallAll(controller.signal)
+        if (all?.questions?.length) {
+          const storeByQuestion = new Map<string, { lastScore: string | null; due: boolean }>()
+          for (const q of all.questions) {
+            storeByQuestion.set(q.question.trim().toLowerCase(), { lastScore: q.lastScore, due: q.due })
+          }
+          // Pre-populate sessionResults for cards that were reviewed and NOT due
+          const prePopulated = new Map<string, SelfScore>()
+          for (const card of cards) {
+            const storeQ = storeByQuestion.get(card.text.trim().toLowerCase())
+            if (storeQ && storeQ.lastScore && !storeQ.due &&
+                (storeQ.lastScore === 'correct' || storeQ.lastScore === 'partial' || storeQ.lastScore === 'incorrect')) {
+              prePopulated.set(card.id, storeQ.lastScore)
+            }
+          }
+          if (prePopulated.size > 0) {
+            setSessionResults(prev => {
+              const n = new Map(prev)
+              for (const [id, score] of prePopulated) n.set(id, score)
+              return n
+            })
           }
         }
-        if (prePopulated.size > 0) {
-          setSessionResults(prev => {
-            const n = new Map(prev)
-            for (const [id, score] of prePopulated) n.set(id, score)
-            return n
-          })
-        }
+        setSeedError(null)
+      } catch (e: unknown) {
+        // Unmount/dep-change aborts are normal — everything else is surfaced.
+        if (e instanceof DOMException && e.name === 'AbortError') return
+        setSeedError('No se pudo sincronizar el almacén de repaso activo. Reintentá desde el botón ↻.')
       }
     }
     seedAndHydrate()
-  }, [data, filter, cards])
+    return () => controller.abort()
+  }, [filter, cards, dataId])
   const pendingCards = cards.filter(c => !sessionResults.has(c.id))
   const currentCard = mode === 'flow' && currentIndex < cards.length ? cards[currentIndex] : null
 
@@ -815,6 +834,12 @@ export default function ShadowStudy({ data, filter }: Props) {
           </div>
         )}
       </div>
+
+      {seedError && (
+        <div className="bg-danger/10 border border-danger/30 rounded-lg px-3 py-2 mb-4">
+          <p className="text-danger text-xs">{seedError}</p>
+        </div>
+      )}
 
       {mode === 'list' && renderList()}
       {mode === 'repaso' && renderRepaso()}

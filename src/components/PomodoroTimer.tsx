@@ -37,6 +37,8 @@ const PHASE_CONFIG: Record<string, { label: string; color: string; icon: string 
 
 export default function PomodoroTimer() {
   const [status, setStatus] = useState<PomodoroStatus | null>(null)
+  const [snapshotAt, setSnapshotAt] = useState(0)
+  const [now, setNow] = useState(() => Date.now())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [workMin, setWorkMin] = useState(25)
@@ -45,23 +47,63 @@ export default function PomodoroTimer() {
   const wasActiveRef = useRef(false)
   const wasPhaseRef = useRef<string | null>(null)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      const s = await fetchPomodoroStatus()
+      const s = await fetchPomodoroStatus(signal)
       setStatus(s)
+      setSnapshotAt(Date.now())
       setError(null)
     } catch (e: any) {
+      if (e?.name === 'AbortError') return
       setError(e.message)
     } finally {
       setLoading(false)
     }
   }, [])
 
+  // Snapshot poll — 5s reconciliation only (issue #4 C6): the countdown is
+  // derived locally every second; the network is no longer polled at 1Hz.
+  const reloadRef = useRef<() => void>(() => {})
   useEffect(() => {
-    load()
-    const interval = setInterval(load, 1000) // refresh every second for countdown
-    return () => clearInterval(interval)
+    const controller = new AbortController()
+    const reload = () => load(controller.signal)
+    reloadRef.current = reload
+    reload()
+    const interval = setInterval(reload, 5000)
+    return () => {
+      controller.abort()
+      clearInterval(interval)
+      reloadRef.current = () => {}
+    }
   }, [load])
+
+  // Local 1s tick: advances the countdown between snapshots (no network).
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Countdown derived from the last snapshot + elapsed wall clock. Frozen when
+  // paused; a zero-crossing triggers one immediate reconcile so phase-change
+  // alarms stay tight instead of waiting the full 5s poll.
+  const liveTimer = useMemo(() => {
+  const timer = liveTimer.timer
+    if (!status?.active || !timer) return { timer: null, hitZero: false }
+    if (status.paused) return { timer, hitZero: false }
+    const drift = Math.max(0, now - snapshotAt)
+    const remaining = Math.max(0, timer.remaining_ms - drift)
+    const next = {
+      ...timer,
+      remaining_ms: remaining,
+      elapsed_ms: timer.elapsed_ms + drift,
+      progress: timer.total_ms ? Math.min(100, timer.progress + (drift / timer.total_ms) * 100) : timer.progress,
+    }
+    return { timer: next, hitZero: remaining === 0 && timer.remaining_ms > 0 }
+  }, [status, now, snapshotAt])
+
+  useEffect(() => {
+    if (liveTimer.hitZero) reloadRef.current()
+  }, [liveTimer.hitZero])
 
   // Alarm: play sound on phase transitions or active → inactive
   useEffect(() => {

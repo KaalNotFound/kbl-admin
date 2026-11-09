@@ -4,8 +4,8 @@
 
 const BASE = '/api'
 
-export async function fetchJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url)
+export async function fetchJSON<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, { signal })
   if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`)
   return res.json()
 }

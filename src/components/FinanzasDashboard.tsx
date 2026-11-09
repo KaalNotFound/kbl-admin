@@ -182,13 +182,9 @@ export default function FinanzasDashboard() {
             <span className="text-[1.8rem] font-bold">$<AnimatedNumber value={data.gastos_fijos} /></span>
             <span className="text-[0.75rem] text-[#a0907e]">{Math.round(data.gastos_fijos / data.gasto_total_mensual * 100)}% del total</span>
           </div>
-          <div className="text-xs text-[#a0907e] space-y-1">
-            <div className="flex justify-between"><span>Alquiler</span><span className="font-mono">$15,000</span></div>
-            <div className="flex justify-between"><span>Comida</span><span className="font-mono">$6,000</span></div>
-            <div className="flex justify-between"><span>Servicios</span><span className="font-mono">$8,000</span></div>
-            <div className="flex justify-between"><span>Transporte</span><span className="font-mono">$1,000</span></div>
-            <div className="flex justify-between"><span>Otros</span><span className="font-mono">$2,000</span></div>
-          </div>
+          {/* TODO(issue #4 A4): the per-category breakdown shown here was fabricated
+              (hardcoded demo rows next to the real API total) and was removed.
+              Restore it only when the backend exposes a real gastos_fijos_detalle. */}
         </div>
 
         <div className="bg-card p-5 hover:border-[rgba(232,184,75,0.2)] hover:bg-[rgba(42,30,42,0.8)]">

@@ -8,8 +8,8 @@ import type {
   ActiveRecallStoreStats,
 } from '../types'
 
-export function fetchActiveRecallAll(): Promise<{ questions: ActiveRecallDueItem[] }> {
-  return fetchJSON<{ questions: ActiveRecallDueItem[] }>(`/api/active-recall/all`)
+export function fetchActiveRecallAll(signal?: AbortSignal): Promise<{ questions: ActiveRecallDueItem[] }> {
+  return fetchJSON<{ questions: ActiveRecallDueItem[] }>(`/api/active-recall/all`, signal)
 }
 
 export function fetchActiveRecallDue(): Promise<ActiveRecallDueResponse> {
@@ -38,8 +38,8 @@ export function submitActiveRecall(params: {
   }).then(r => r.json())
 }
 
-export function fetchActiveRecallStats(): Promise<ActiveRecallStoreStats> {
-  return fetchJSON<ActiveRecallStoreStats>(`/api/active-recall/stats`)
+export function fetchActiveRecallStats(signal?: AbortSignal): Promise<ActiveRecallStoreStats> {
+  return fetchJSON<ActiveRecallStoreStats>(`/api/active-recall/stats`, signal)
 }
 
 export function fetchActiveRecallIngest(): Promise<{ success: boolean; imported: number; stats: ActiveRecallStoreStats }> {
@@ -68,10 +68,11 @@ export function seedActiveRecallQuestions(questions: Array<{
   definition?: string | null
   sourceNote?: string | null
   sourceBloque?: number
-}>): Promise<{ success: boolean; seeded: number; stats: ActiveRecallStoreStats }> {
+}>, signal?: AbortSignal): Promise<{ success: boolean; seeded: number; stats: ActiveRecallStoreStats }> {
   return fetch(`/api/active-recall/seed`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ questions }),
+    signal,
   }).then(r => r.json())
 }

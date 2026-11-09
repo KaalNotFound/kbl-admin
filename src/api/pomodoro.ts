@@ -2,8 +2,8 @@
 import { fetchJSON } from './client'
 import type { PomodoroStatus } from '../types'
 
-export function fetchPomodoroStatus(): Promise<PomodoroStatus> {
-  return fetchJSON<PomodoroStatus>(`/api/pomodoro/status`)
+export function fetchPomodoroStatus(signal?: AbortSignal): Promise<PomodoroStatus> {
+  return fetchJSON<PomodoroStatus>(`/api/pomodoro/status`, signal)
 }
 
 export function startPomodoro(workMin: number, breakMin: number): Promise<{ success: boolean; phase: string }> {
