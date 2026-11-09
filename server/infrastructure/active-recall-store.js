@@ -93,7 +93,15 @@ function calcNextReview(interval, score, previousScore) {
 
 // --- Get all questions due for review ---
 function getDueQuestions(dateStr) {
-  const store = readStore()
+  return dueQuestionsFrom(readStore(), dateStr)
+}
+
+// --- Due list derived from an ALREADY-READ store snapshot (pure) ---
+// B7-4: GET /api/active-recall/due used to parse the store file 3x per
+// request (getDueQuestions + getStats + the getDueQuestions nested inside
+// getStats). These helpers derive both results from ONE readStore() call,
+// still request-scoped — no module cache.
+function dueQuestionsFrom(store, dateStr) {
   const today = dateStr || new Date().toISOString().slice(0, 10)
   const due = []
 
@@ -396,12 +404,19 @@ function getAllQuestions() {
 // --- Stats ---
 function getStats() {
   const store = readStore()
+  return statsFrom(store, dueQuestionsFrom(store))
+}
+
+// --- Stats derived from an ALREADY-READ store snapshot + its due list ---
+// (see dueQuestionsFrom for the single-read rationale; dueCount comes from
+// the same snapshot — multi-read inconsistency is impossible here).
+function statsFrom(store, due) {
   const questions = Object.values(store.questions)
   const allReviews = questions.flatMap(q => q.reviews)
 
   const totalQuestions = questions.length
   const totalReviews = allReviews.length
-  const dueCount = getDueQuestions().length
+  const dueCount = due.length
   const reviewedToday = allReviews.filter(r => r.date.slice(0, 10) === new Date().toISOString().slice(0, 10)).length
 
   // Streak: consecutive days with at least one review
@@ -432,6 +447,14 @@ function getStats() {
   }
 }
 
+// --- One readStore() serves both GET /due results (questions + stats) ---
+function getDueWithStats(limit) {
+  const store = readStore()
+  const due = dueQuestionsFrom(store)
+  const questions = Number.isFinite(limit) ? due.slice(0, limit) : due
+  return { questions, stats: statsFrom(store, due) }
+}
+
 // --- Ensure store exists on import ---
 ensureStore()
 
@@ -443,6 +466,7 @@ export {
   getAllQuestions,
   getQuestion,
   submitReview,
+  getDueWithStats,
   seedQuestions,
   ingestFromActiveRecall,
   getStats

@@ -20,7 +20,8 @@ const ingestLimiter = createScopedRateLimiter({ max: 5 });
  * se eliminó en la torre (bug fix documentado en el use-case).
  */
 
-// POST /active-recall/review — { conceptHash, correct, timeSpentMs, mode }
+// POST /active-recall/review — { question, score, ... } (contrato del store
+// legacy, validación alineada con /submit en el use-case — fix A2).
 router.post('/active-recall/review', async (req, res) => {
   try {
     const result = await req.useCases.activeRecall.submitReview(req.body || {})

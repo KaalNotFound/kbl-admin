@@ -9,10 +9,10 @@
  *
  * Nota de torre (bug fix): el endpoint POST /active-recall/review tenía un
  * path DI condicional hacia submitActiveRecallReview (use-case de mastery)
- * con contrato desalineado (conceptHash/correct vs concept/score/question) →
- * con el container cableado respondía 500 SIEMPRE. Se reemplaza por
- * activeRecall.submitReview (el fallback legacy que funcionaba), preservando
- * la validación y el Result pattern.
+ * con contrato desalineado → 500 SIEMPRE con el container. ADR-025 lo
+ * re-dirigió a store.submitReview pero con validación aún desalineada
+ * (conceptHash/correct vs question/score); fix A2 (2026-11-09): la
+ * validación ahora replica el contrato real del store legacy (como /submit).
  */
 
 import { resolveWithinRoot } from '../../lib/path-guard.mjs'
@@ -68,15 +68,23 @@ function normalizeQuestion(raw) {
 export function createActiveRecallUseCases({ store, defaultIngestDir }) {
   /**
    * POST /active-recall/review
-   * Body: { conceptHash, correct, timeSpentMs, mode }
-   * Result pattern (AGENTS §2.3): validación → { status, error }; éxito → { ok: true, value }.
+   * Body: { question, score, answer?, ... } — the legacy store contract,
+   * same validation as POST /active-recall/submit. Fix A2 (2026-11-09): the
+   * previous validation {conceptHash, correct} fed `question: undefined`
+   * into hashQuestion() → /review answered 500 on every call. No
+   * conceptHash support is invented (no consumer sends it — the first-party
+   * UI records reviews via /submit); the store allowlist keeps dropping
+   * unknown fields (timeSpentMs, mode).
    */
   async function submitReview(payload = {}) {
-    const { conceptHash, correct, timeSpentMs, mode } = payload;
-    if (!conceptHash || correct === undefined) {
-      return { status: 400, error: 'conceptHash and correct are required' };
+    const { question, score } = payload;
+    if (typeof question !== 'string' || !question.trim()) {
+      return { status: 400, error: 'La pregunta es obligatoria.' };
     }
-    const value = store.submitReview({ conceptHash, correct, timeSpentMs, mode });
+    if (!['correct', 'partial', 'incorrect'].includes(score)) {
+      return { status: 400, error: 'El resultado debe ser correct, partial o incorrect.' };
+    }
+    const value = store.submitReview(payload);
     return { ok: true, value };
   }
 
@@ -111,9 +119,8 @@ export function createActiveRecallUseCases({ store, defaultIngestDir }) {
 
   /** GET /active-recall/due → ActiveRecallDueResponse { questions, stats } */
   async function getDueWithStats(payload = {}) {
-    let questions = store.getDueQuestions();
-    if (Number.isFinite(payload.limit)) questions = questions.slice(0, payload.limit);
-    return { ok: true, value: { questions, stats: store.getStats() } };
+    const limit = Number.isFinite(payload.limit) ? payload.limit : null;
+    return { ok: true, value: store.getDueWithStats(limit) };
   }
 
   /** GET /active-recall/question/:id → full question or 404 */

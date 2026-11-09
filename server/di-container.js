@@ -195,6 +195,7 @@ function createContainer(opts = {}) {
       defaultIngestDir: vaultFs.ACTIVE_RECALL_DIR,
       store: {
         getDueQuestions: activeRecallStore.getDueQuestions,
+        getDueWithStats: activeRecallStore.getDueWithStats,
         submitReview: activeRecallStore.submitReview,
         getStats: activeRecallStore.getStats,
         getAllQuestions: activeRecallStore.getAllQuestions,
