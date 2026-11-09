@@ -6,6 +6,9 @@
   "engines": {
     "node": ">=18"
   },
+  "overrides": {
+    "qs": "6.16.2"
+  },
   "imports": {
     "#domain": "./shared_kernel/domain/index.js",
     "#shared/*": "./shared_kernel/*",
