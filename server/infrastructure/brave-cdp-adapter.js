@@ -10,6 +10,30 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+const CDP_DISCOVERY_TIMEOUT_MS = 5000;
+
+/**
+ * Resolve the DevTools WebSocket endpoint behind a bounded fetch.
+ *
+ * puppeteer.connect({ browserURL }) performs this discovery GET itself
+ * (puppeteer-core BrowserConnector#getWSEndpoint) with global fetch and NO
+ * timeout — a wedged Brave would hang every WhatsApp route. Probe first with
+ * a hard AbortSignal, then connect to the resolved webSocketDebuggerUrl.
+ *
+ * @param {string} rootUrl - CDP base URL (e.g. 'http://127.0.0.1:9222')
+ * @returns {Promise<string>} webSocketDebuggerUrl from the DevTools endpoint
+ */
+export async function resolveCdpEndpoint(rootUrl) {
+  const endpointURL = new URL('/json/version', rootUrl);
+  const result = await fetch(endpointURL.toString(), {
+    method: 'GET',
+    signal: AbortSignal.timeout(CDP_DISCOVERY_TIMEOUT_MS),
+  });
+  if (!result.ok) throw new Error('HTTP ' + result.status);
+  const data = await result.json();
+  return data.webSocketDebuggerUrl;
+}
+
 async function getWhatsAppPage(browser) {
   const pages = await browser.pages();
   const wa = pages.find(p => p.url().startsWith(WA_URL));
@@ -33,7 +57,8 @@ export class BraveCdpAdapter {
       if (_browser && _browser.isConnected()) return;
       for (let i = 0; i < 3; i++) {
         try {
-          _browser = await puppeteer.connect({ browserURL: CDP_URL, defaultViewport: null });
+          const wsEndpoint = await resolveCdpEndpoint(CDP_URL);
+          _browser = await puppeteer.connect({ browserWSEndpoint: wsEndpoint, defaultViewport: null });
           // A real browser can disappear at any time (tab closed, WhatsApp
           // navigation, Brave restart). Track the disconnect so the next
           // call reconnects instead of using a dead handle, and so detach

@@ -14,6 +14,10 @@
  * vive acá (estado de presentación de la lectura, no del adapter).
  */
 
+// CDP HTTP endpoints must be bounded (OWASP A10/LLM05): a hung Brave would
+// otherwise stall the route chain without a hard abort signal.
+const CDP_FETCH_TIMEOUT_MS = 5000;
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -64,7 +68,9 @@ export function createBraveUseCases({ brave }) {
         return braveTabsCache.data;
       }
       const raw = await retry(async () => {
-        const response = await fetch('http://127.0.0.1:9222/json');
+        const response = await fetch('http://127.0.0.1:9222/json', {
+          signal: AbortSignal.timeout(CDP_FETCH_TIMEOUT_MS),
+        });
         if (!response.ok) throw new Error('CDP tabs HTTP ' + response.status);
         return await response.json();
       }, { maxRetries: 2, baseDelay: 500, label: 'CDP:brave-tabs' });
@@ -104,7 +110,9 @@ export function createBraveUseCases({ brave }) {
         return { status: 400, error: 'targetId es requerido' };
       }
       return await retry(async () => {
-        const response = await fetch('http://127.0.0.1:9222/json/activate/' + encodeURIComponent(targetId));
+        const response = await fetch('http://127.0.0.1:9222/json/activate/' + encodeURIComponent(targetId), {
+          signal: AbortSignal.timeout(CDP_FETCH_TIMEOUT_MS),
+        });
         if (!response.ok) throw new Error('CDP activate HTTP ' + response.status);
         return { success: true };
       }, { maxRetries: 1, baseDelay: 500, label: 'CDP:activate:' + targetId });

@@ -3,6 +3,29 @@
 Technical changelog of notable fixes. Useful for onboarding, review, and
 retrospectives. Ordered newest first.
 
+## 2026-11-09 — Security perimeter slice 4: exception handling + outbound bounding (issue #3)
+
+Stop raw `error.message` leaks and bound hanging outbound calls (A09/A10/LLM05).
+
+- Routes stopped returning raw exception messages: mastery (10 catch blocks),
+  study (7) and capture now answer with `logAndRespond` — throttled server-side
+  logs, generic Spanish body, original HTTP status kept. Capture 4xx keeps the
+  curated triage copy (HTTP contract in capture-triage), 5xx bodies are
+  sanitized; batch failure items no longer carry the raw message.
+- `server/lib/crash-policy.mjs`: uncaughtException policy —
+  `KBL_EXIT_ON_UNCAUGHT=1` exits 1 (supervised/CI); default keeps serving.
+- requestLogger now mounts BEFORE the API routers (matched routes log
+  request.start/end; previously the timing middleware was unreachable for
+  matched paths).
+- Outbound calls bounded: CDP discovery `resolveCdpEndpoint` (5s fetch —
+  puppeteer's browserURL path was unbounded), brave use-case CDP HTTP fetches
+  (5s), NotebookLM proxy hard 30s AbortSignal (its 60s socket timeout never
+  fires on slow-drip responses). anki already had its 5s bound.
+
+**Gates:** suite 272 baseline + new tests
+(`server/__tests__/security-exceptions-logging.test.js`) → 286/286 green.
+`npx vite build` OK.
+
 ## 2026-11-09 — Security perimeter slice 3: data integrity at trust boundaries (issue #3)
 
 Frontmatter injection, LLM output validation and seed/inject mass assignment.

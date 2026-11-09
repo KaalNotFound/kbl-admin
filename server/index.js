@@ -17,12 +17,21 @@ process.on('unhandledRejection', (reason) => {
 });
 process.on('uncaughtException', (err) => {
   console.error('[process] uncaughtException:', err?.stack || err);
+  if (shouldExitOnUncaught(process.env)) {
+    // Supervised runs (KBL_EXIT_ON_UNCAUGHT=1): crash loudly so the
+    // supervisor restarts with clean state instead of serving from
+    // unknowable in-memory state.
+    process.exit(1);
+  }
+  // Default: keep serving. Killing a local dashboard on a benign bug is
+  // worse UX than a degraded process; the error above is the evidence.
 });
 
 // Infrastructure
 import { createContainer } from './di-container.js';
 import { createDiMiddleware } from './middleware/di.mjs';
 import { correlationIdMiddleware, requestLogger } from './infrastructure/correlation-middleware.js';
+import { shouldExitOnUncaught } from './lib/crash-policy.mjs';
 
 // Security + Routes
 import {
@@ -55,13 +64,16 @@ const container = createContainer({
 app.use(correlationIdMiddleware);
 app.use(createDiMiddleware(container));
 
+// --- Request lifecycle logging ---
+// Mounted BEFORE API routers: it wraps res.end so matched route handlers emit
+// request.start/request.end timings (after the routers it would only run for
+// unmatched /api paths hitting the 404 fallback).
+app.use('/api', requestLogger);
+
 // --- API routes ---
 for (const router of apiRouters) {
   app.use('/api', router);
 }
-
-// --- Request lifecycle logging ---
-app.use('/api', requestLogger);
 
 // --- Static frontend + SPA fallback ---
 const distPath = path.resolve(__dirname, '..', 'dist');

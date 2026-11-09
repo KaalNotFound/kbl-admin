@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { logAndRespond, throttledErrorLog } from '../lib/error-handler.mjs'
 
 const router = Router()
 
@@ -57,7 +58,11 @@ router.post('/capture', async (req, res) => {
         const error = result.error
         const status = error.statusCode
           || (error.code === 'VALIDATION_ERROR' ? 400 : 500)
-        return res.status(status).json({ error: error.message })
+        // Validation-class failures carry curated UX copy (HTTP contract:
+        // capture-triage.test.js asserts it) and never raw exception
+        // internals, so they pass through. 5xx details stay server-side.
+        const userMessage = status < 500 ? error.message : undefined
+        return res.status(status).json(logAndRespond('capture', 'POST', '/capture', error, userMessage))
       }
       return res.status(200).json({
         success: true,
@@ -113,7 +118,9 @@ router.post('/capture/batch', async (req, res) => {
           date,
         })
         if (result.isFailure) {
-          results.push({ title, status: 'failed', error: result.error.message })
+          throttledErrorLog('capture', 'POST', '/capture/batch', result.error)
+          // Sanitized: the raw use-case message stays server-side only.
+          results.push({ title, status: 'failed', error: 'No se pudo guardar la captura.' })
         } else {
           results.push({
             title,

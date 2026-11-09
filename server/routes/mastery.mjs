@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { logAndRespond } from '../lib/error-handler.mjs'
 
 const router = Router()
 
@@ -12,7 +13,7 @@ router.get('/mastery', async (req, res) => {
     res.json(mastery)
   } catch (error) {
     req.log?.error('mastery_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'GET', '/mastery', error))
   }
 })
 
@@ -25,7 +26,7 @@ router.get('/mastery/modules', async (req, res) => {
     res.json({ modules })
   } catch (error) {
     req.log?.error('mastery_modules_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'GET', '/mastery/modules', error))
   }
 })
 
@@ -41,7 +42,7 @@ router.get('/mastery/module/:moduleId', async (req, res) => {
     res.json({ moduleId: req.params.moduleId, ...module })
   } catch (error) {
     req.log?.error('mastery_module_error', { moduleId: req.params.moduleId, error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'GET', '/mastery/module/:moduleId', error))
   }
 })
 
@@ -59,7 +60,7 @@ router.get('/study/mastery', async (req, res) => {
     res.json({ success: true, concepts, count: concepts.length })
   } catch (error) {
     req.log?.error('mastery_study_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'GET', '/study/mastery', error))
   }
 })
 
@@ -75,7 +76,7 @@ router.get('/study/mastery/:concept', async (req, res) => {
     res.json({ success: true, data })
   } catch (error) {
     req.log?.error('mastery_concept_error', { concept: req.params.concept, error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'GET', '/study/mastery/:concept', error))
   }
 })
 
@@ -96,7 +97,7 @@ router.post('/study/mastery/validate', async (req, res) => {
     res.json({ success: true, data })
   } catch (error) {
     req.log?.error('mastery_validate_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'POST', '/study/mastery/validate', error))
   }
 })
 
@@ -109,7 +110,7 @@ router.get('/study/skill-tree', async (req, res) => {
     res.json({ success: true, modules })
   } catch (error) {
     req.log?.error('mastery_skilltree_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'GET', '/study/skill-tree', error))
   }
 })
 
@@ -122,7 +123,7 @@ router.get('/study/debt', async (req, res) => {
     res.json({ success: true, data })
   } catch (error) {
     req.log?.error('mastery_debt_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'GET', '/study/debt', error))
   }
 })
 
@@ -135,7 +136,7 @@ router.get('/study/bias', async (req, res) => {
     res.json({ success: true, data })
   } catch (error) {
     req.log?.error('mastery_bias_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'GET', '/study/bias', error))
   }
 })
 
@@ -156,7 +157,7 @@ router.post('/study/socratic', async (req, res) => {
     res.json({ success: true, data })
   } catch (error) {
     req.log?.error('mastery_socratic_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('mastery', 'POST', '/study/socratic', error))
   }
 })
 

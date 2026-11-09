@@ -6,6 +6,9 @@ import http from 'http'
 
 const NLM_BASE = process.env.NOTEBOOKLM_URL || 'http://localhost:3000'
 const TIMEOUT_MS = 60_000
+// Hard wall-clock bound: the socket `timeout` above only fires on inactivity,
+// so a slow-drip LLM/NotebookLM response could hang a consumer forever (LLM05).
+const ABORT_MS = 30_000
 
 /**
  * Send a request to notebooklm-mcp and return the parsed JSON response.
@@ -25,6 +28,7 @@ export async function nlmRequest(method, endpoint, body = null) {
       method,
       headers: { 'Content-Type': 'application/json' },
       timeout: TIMEOUT_MS,
+      signal: AbortSignal.timeout(ABORT_MS),
     }
 
     const req = http.request(reqOpts, (res) => {

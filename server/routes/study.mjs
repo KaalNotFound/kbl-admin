@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { logAndRespond } from '../lib/error-handler.mjs'
 
 const router = Router()
 
@@ -40,7 +41,7 @@ router.post('/study/start-session', async (req, res) => {
     res.status(201).json(session)
   } catch (error) {
     req.log?.error('study_session_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('study', 'POST', '/study/start-session', error))
   }
 })
 
@@ -86,7 +87,7 @@ router.post('/study/record-quiz', async (req, res) => {
     })
   } catch (error) {
     req.log?.error('quiz_record_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('study', 'POST', '/study/record-quiz', error))
   }
 })
 
@@ -103,7 +104,7 @@ router.get('/study/data', async (req, res) => {
     res.json(req.useCases.studyData.getData())
   } catch (error) {
     req.log?.error('study_data_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('study', 'GET', '/study/data', error))
   }
 })
 
@@ -115,7 +116,7 @@ router.get('/study/history', async (req, res) => {
     res.json(req.useCases.studyData.getHistory())
   } catch (error) {
     req.log?.error('study_history_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('study', 'GET', '/study/history', error))
   }
 })
 
@@ -131,7 +132,7 @@ router.post('/study/answer', async (req, res) => {
     res.status(201).json({ success: true, ...result })
   } catch (error) {
     req.log?.error('study_answer_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('study', 'POST', '/study/answer', error))
   }
 })
 
@@ -146,7 +147,7 @@ router.post('/study/self-score', async (req, res) => {
     res.status(201).json({ success: true, ...result })
   } catch (error) {
     req.log?.error('study_self_score_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('study', 'POST', '/study/self-score', error))
   }
 })
 
@@ -161,7 +162,7 @@ router.post('/study/feedback-request', async (req, res) => {
     res.status(201).json({ success: true, ...result })
   } catch (error) {
     req.log?.error('study_feedback_request_error', { error: error.message })
-    res.status(500).json({ error: error.message })
+    res.status(500).json(logAndRespond('study', 'POST', '/study/feedback-request', error))
   }
 })
 
