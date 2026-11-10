@@ -1,7 +1,14 @@
 import { Router } from 'express'
 import { logAndRespond, throttledErrorLog } from '../lib/error-handler.mjs'
+import { createScopedRateLimiter } from '../middleware/security.mjs'
 
 const router = Router()
+
+// Vault writes are state-creating; the batch path multiplies writes by the
+// batch payload. Scoped quotas cap runaway automation (real usage: single
+// manual captures and small batches, far below these ceilings).
+const captureLimiter = createScopedRateLimiter({ max: 20 })
+const captureBatchLimiter = createScopedRateLimiter({ max: 5 })
 
 export const MAX_BATCH_SIZE = 100
 
@@ -27,7 +34,7 @@ export function assertBatchSize(body) {
  * and `date` (YYYY-MM-DD). Validation failures of the triage (missing
  * comercio/producto, bad slot) come back as 400 with a clear message.
  */
-router.post('/capture', async (req, res) => {
+router.post('/capture', captureLimiter, async (req, res) => {
   try {
     const body = req.body || {}
     const { content, title, tags, source, conceptos_clave, entityType, priority, energy, focus, fields, date } = body
@@ -83,7 +90,7 @@ router.post('/capture', async (req, res) => {
  * POST /capture/batch — Save multiple notes via DI use case.
  * Phase 3: each item supports the same triage (fields/date passthrough).
  */
-router.post('/capture/batch', async (req, res) => {
+router.post('/capture/batch', captureBatchLimiter, async (req, res) => {
   try {
     const { captures } = req.body || {}
 

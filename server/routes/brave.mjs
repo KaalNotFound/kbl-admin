@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { logAndRespond } from '../lib/error-handler.mjs';
+import { createScopedRateLimiter } from '../middleware/security.mjs';
 
 const router = Router();
+
+// CDP activation spawns browser-side actions; quota it like other control
+// surfaces (see security-rate-writes.test.js).
+const activateLimiter = createScopedRateLimiter({ max: 10 });
 
 // GET /api/brave/tabs -- proxy a CDP :9222 (use-case con cache TTL + retry)
 router.get('/brave/tabs', async (req, res) => {
@@ -15,7 +20,7 @@ router.get('/brave/tabs', async (req, res) => {
 });
 
 // POST /api/brave/activate -- activar pestaña vía CDP (contrato api.test.js:150-162)
-router.post('/brave/activate', async (req, res) => {
+router.post('/brave/activate', activateLimiter, async (req, res) => {
   try {
     const { targetId } = req.body || {};
     if (!targetId) {
