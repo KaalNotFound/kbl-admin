@@ -1,0 +1,163 @@
+{
+  "trends": [
+    {
+      "title": "El gasto mundial en IA llega a US$ 2,7 billones en 2026",
+      "detail": "Crecimiento del 49,5% interanual. La infraestructura IA (servidores optimizados, IaaS, semiconductores) es el segmento más grande (~US$ 1,48 billones) impulsada por hyperscalers: 'el mayor proyecto de infraestructura de la humanidad'.",
+      "source": "Gartner · sep 2026",
+      "priority": "alta"
+    },
+    {
+      "title": "La inversión privada en IA se duplicó en 2025: US$ 344,7 B (+127,5%)",
+      "detail": "La IA generativa capturó US$ 170,9 B (~la mitad) con más de 200% de crecimiento. EE.UU. invirtió US$ 285,9 B (23x China). El gasto corporativo total alcanzó US$ 581,7 B (+130%).",
+      "source": "Stanford HAI · AI Index 2026",
+      "priority": "alta"
+    },
+    {
+      "title": "88% de las organizaciones ya usan IA en al menos una función",
+      "detail": "Subió desde 78% en 2024; 79% usa IA generativa de forma regular. Máxima adopción en gestión del conocimiento y en software engineering en el sector tecnológico (58%).",
+      "source": "AI Index 2026 · encuestas McKinsey",
+      "priority": "alta"
+    },
+    {
+      "title": "La IA generativa llegó al 53% de la población en 3 años",
+      "detail": "Más veloz que la PC o internet. El valor excedente para consumidores de EE.UU. alcanzó US$ 172 B anuales a inicios de 2026 (el valor mediano por usuario se triplicó en un año).",
+      "source": "Stanford HAI · AI Index 2026",
+      "priority": "alta"
+    },
+    {
+      "title": "Benchmarks de código: SWE-bench Verified pasó de 60% a casi 100% en un año",
+      "detail": "La industria produjo más del 90% de los modelos frontera de 2025 y varios ya superan baselines humanas en ciencia nivel PhD, razonamiento multimodal y matemáticas de competición.",
+      "source": "Stanford HAI · AI Index 2026",
+      "priority": "alta"
+    },
+    {
+      "title": "Realidad agéntica: solo 17% desplegó agentes y >40% de los proyectos se cancelarán hacia 2027",
+      "detail": "La GenAI entró en el Trough of Disillusionment del hype cycle de 2026. ~130 de miles de vendors 'agénticos' son reales (agent washing). Los obstáculos: costos en ascenso, ROI poco claro y controles de riesgo insuficientes.",
+      "source": "Gartner · jun 2025 / sep 2026",
+      "priority": "alta"
+    },
+    {
+      "title": "83% de los desarrolladores usan IA; 73% de los usuarios, a diario",
+      "detail": "Asistentes de código 66% vs chatbots 63%: la IA ya es infraestructura del editor. Líderes de agentes: Claude Code (66%) y Copilot (59%). Top tareas: generar código conocido (69%), debugging (64%), tests (58%). Solo 20% la usa para operar producción.",
+      "source": "Stack Overflow Dev Survey 2026 · oct 2026",
+      "priority": "alta"
+    },
+    {
+      "title": "Paradoja de confianza: uso 44%→85% (2023→2026) mientras la confianza cayó 46%→38%",
+      "detail": "El patrón dominante es 'IA como borrador supervisado': 48,2% confía solo en salidas fácilmente verificables y 98,2% verifica el output antes de usarlo. La profesión delega más y confía menos.",
+      "source": "SO Surveys 2023-2026 · análisis longitudinal",
+      "priority": "alta"
+    },
+    {
+      "title": "Empleo de devs de 22-25 años en EE.UU. cayó ~20% desde 2024",
+      "detail": "Los efectos laborales se concentran en pipelines de contratación y los trabajadores más jóvenes de ocupaciones expuestas. Un tercio de los empleadores anticipa recortes el próximo año, con mayor severidad en operaciones, cadena de suministro y software engineering.",
+      "source": "Stanford HAI · AI Index 2026",
+      "priority": "alta"
+    },
+    {
+      "title": "Bono de productividad medible: +26% software, +50% marketing, +14-15% soporte",
+      "detail": "Las ganancias son mayores en trabajo estructurado y medible; menores en tareas de razonamiento profundo. Evidencia nueva advierte que la dependencia pesada de IA puede penalizar el desarrollo de habilidades a largo plazo.",
+      "source": "Stanford HAI · AI Index 2026",
+      "priority": "media"
+    },
+    {
+      "title": "Seguridad IA: 362 incidentes documentados en 2025 (+55% vs 233 en 2024)",
+      "detail": "La IA responsable no sigue el ritmo de la capacidad: los benchmarks de safety van rezagados. Gartner señala gobernanza e identidad como prerrequisitos para escalar agentes, no como actividad posterior.",
+      "source": "AI Index 2026 + Gartner Hype Cycle",
+      "priority": "alta"
+    },
+    {
+      "title": "39% de las habilidades del trabajo cambiarán hacia 2030; AI & big data es la #1",
+      "detail": "El transformations tecnológico creará ~170 M de trabajos y desplazará ~92 M (+7% neto = 78 M de trabajos netos). El talento humano premium: pensamiento analítico, resiliencia y agilidad, además de las habilidades tech.",
+      "source": "WEF · Future of Jobs 2025",
+      "priority": "alta"
+    },
+    {
+      "title": "LatAm en el radar: Chile entre los países donde crecen más rápido las skills de ingeniería IA",
+      "detail": "La educación formal va rezagada frente a la IA, pero la gente aprende skills de IA en todas las edades. Más de 4 de cada 5 estudiantes universitarios ya usan GenAI.",
+      "source": "Stanford HAI · AI Index 2026",
+      "priority": "media"
+    },
+    {
+      "title": "25% de las startups de YC Winter 2025 operan con ≥95% de código generado por IA",
+      "detail": "Para Garry Tan (CEO de YC) esto significa equipos 5-10x más pequeños: 'no necesitás 50 o 100 ingenieros'. ~80% de esa cohorte construye productos de IA. La tendencia cambia el concepto de equipo de ingeniería.",
+      "source": "Garry Tan · CNBC · mar 2025",
+      "priority": "media"
+    }
+  ],
+  "ceo_quotes": [
+    {
+      "quote": "You're not going to lose your job to an AI, but you're going to lose your job to someone who uses AI.",
+      "person": "Jensen Huang · CEO Nvidia",
+      "date": "may 2025 · Milken Institute Global Conference"
+    },
+    {
+      "quote": "People talk about AI reducing jobs — complete nonsense. It's causing more software engineers to be hired.",
+      "person": "Jensen Huang · CEO Nvidia",
+      "date": "jun 2026 · GTC Taipei"
+    },
+    {
+      "quote": "Cancer is cured, the economy grows at 10% a year, the budget is balanced — and 20% of people don't have jobs.",
+      "person": "Dario Amodei · CEO Anthropic",
+      "date": "may 2025 · Axios (pérdida de hasta 50% de empleos white-collar de nivel inicial en 1-5 años)"
+    },
+    {
+      "quote": "I think we're going to see this year the beginnings of maybe it impacting the junior level... maybe like a slowdown in hiring in entry-level roles and internships.",
+      "person": "Demis Hassabis · CEO Google DeepMind",
+      "date": "ene 2026 · Davos"
+    },
+    {
+      "quote": "Now anyone can be a software developer — but it's also raising the ceiling on what is this new sophistication you need in order to be productive with these new tools.",
+      "person": "Satya Nadella · CEO Microsoft",
+      "date": "mar 2026 · OMR Podcast"
+    },
+    {
+      "quote": "You don't need a team of 50 or 100 engineers. You don't have to raise as much. The capital goes much longer.",
+      "person": "Garry Tan · CEO Y Combinator",
+      "date": "mar 2025 · CNBC"
+    }
+  ],
+  "recommendations": [
+    {
+      "skill": "Evaluación y verificación de sistemas IA (TDD de IA)",
+      "focus": "tests de comportamiento, evaluación de LLMs, revisión supervisada",
+      "porque": "98,2% de los devs verifican la salida de IA y la confianza cayó a 38%: el diferencial del mercado ya no es generar código con IA, es probar que lo que generó sirve. Un portafolio de tests verdes supera un portafolio de prompts."
+    },
+    {
+      "skill": "Arquitectura de aplicaciones IA (RAG, agentes, orquestación)",
+      "focus": "diseño de contexto, selección de modelos, observabilidad de agentes",
+      "porque": "La infraestructura IA mueve ~US$ 1,48 billón en 2026 y los agentes son la categoría de mayor crecimiento (+139%): los roles se llenan de ingenieros que saben orquestar, medir y limitar sistemas completos, no solo llamar a una API."
+    },
+    {
+      "skill": "Seguridad de LLMs (OWASP LLM Top 10)",
+      "focus": "prompt injection, cuotas per-endpoint, fail-closed, validación de output",
+      "porque": "362 incidentes documentados en 2025 y Gartner sitúa gobernanza e identidad como prerrequisito del agentic: seguridad de IA es el diferenciador más inmediato y con menos competencia en el mercado laboral."
+    },
+    {
+      "skill": "Fluidez de ingeniería aumentada por IA",
+      "focus": "dominar Claude Code/Copilot + code review humano riguroso",
+      "porque": "66% de los devs ya usan agentes de código (Claude Code líder, Copilot segundo). La brecha del 2026 no es tener acceso: es extraer el máximo del flujo agent + validar. Huanga lo dijo: pierde el trabajo el que no sabe usarla bien."
+    },
+    {
+      "skill": "Juicio de delegación: saber cuándo NO usar IA",
+      "focus": "operación de producción, datos sensibles, decisiones de arquitectura",
+      "porque": "Solo 20% usa IA para operar producción: los límites del mercado ya están diagramados. Los senior futuros se definen por la calidad de lo que delegan a la IA y de lo que se reservan."
+    },
+    {
+      "skill": "FinOps de IA liviano",
+      "focus": "costos por token, cuotas de uso, budget de agentes",
+      "porque": "El principal motivo de cancelación de proyectos agénticos según Gartner es el costo en ascenso: empresas pagan por ingenieros que hacen viable economics. Un dashboard de costos IA en el TFM demuestra criterio de negocio."
+    }
+  ],
+  "motivational_phrases": [
+    "La IA no te quita el trabajo: te lo quita la persona que la usa mejor que vos.",
+    "Desearía a esta generación abundantes dosis de esfuerzo. La maestría no viene de los rápidos: viene de los que sostienen.",
+    "Ahora cualquiera puede programar... y por eso subió el techo de lo exigible. Tus años de ventaja viven arriba de ese techo.",
+    "El 95% del código puede venir de la IA. El criterio de qué construir, no.",
+    "Nadie contrata 'prompting'. Se contrata criterio sobre qué validar y qué no delegar.",
+    "La adopción más rápida de la historia tecnológica también niveló el piso: si tu output es igual al de todos, perdés.",
+    "83% de los devs usan IA todos los días. Los verificados ganan; los reescriben, no.",
+    "El mercado paga por la capacitación donde la IA falla: arquitectura, riesgo, mantenimiento del contexto."
+  ],
+  "last_updated": "2026-11-10"
+}
