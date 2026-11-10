@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import type { PomodoroStatus } from '../types'
 import { fetchPomodoroStatus, startPomodoro, stopPomodoro, skipPomodoro, pausePomodoro, resumePomodoro } from '../api'
 
@@ -87,7 +87,7 @@ export default function PomodoroTimer() {
   // paused; a zero-crossing triggers one immediate reconcile so phase-change
   // alarms stay tight instead of waiting the full 5s poll.
   const liveTimer = useMemo(() => {
-  const timer = liveTimer.timer
+    const timer = status?.current_timer
     if (!status?.active || !timer) return { timer: null, hitZero: false }
     if (status.paused) return { timer, hitZero: false }
     const drift = Math.max(0, now - snapshotAt)
