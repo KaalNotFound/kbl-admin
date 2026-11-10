@@ -107,7 +107,7 @@ export default function PatrimonioDashboard() {
                       <Cell key={i} fill={['#8fcab0', '#e8b84b', '#5b9bd5', '#e08a7a', '#b8a0d8'][i % 5]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: '#1e1420', border: '1px solid rgba(232,184,75,0.15)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: '#c8b8a8' }} formatter={(v: number) => `$${v}`} />
+                  <Tooltip contentStyle={{ background: '#1e1420', border: '1px solid rgba(232,184,75,0.15)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: '#c8b8a8' }} formatter={(v) => `$${Number(v)}`} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap justify-center gap-3">

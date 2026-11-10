@@ -168,8 +168,8 @@ export default function ComprasDashboard({ month }: { month: string }) {
           </div>
           <div className="mt-4 pt-4 border-t border-[rgba(232,184,75,0.06)] flex justify-between items-center">
             <span className="text-[0.75rem] text-text-tertiary">Diferencia</span>
-            <span className={`text-sm font-bold ${summary.change_percent > 0 ? 'text-kbl-red' : 'text-kbl-green'}`}>
-              {summary.change_percent > 0 ? '↑' : '↓'} ${Math.abs(summary.total - prevSummary.total)} ({Math.abs(summary.change_percent)}%)
+            <span className={`text-sm font-bold ${(summary.change_percent ?? 0) > 0 ? 'text-kbl-red' : 'text-kbl-green'}`}>
+              {(summary.change_percent ?? 0) > 0 ? '↑' : '↓'} ${Math.abs(summary.total - prevSummary.total)} ({Math.abs(summary.change_percent ?? 0)}%)
             </span>
           </div>
         </div>
@@ -229,7 +229,7 @@ export default function ComprasDashboard({ month }: { month: string }) {
 
       <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1">
         {/* Hormiga */}
-        {insights?.hormiga?.length > 0 && (
+        {insights && insights.hormiga.length > 0 && (
           <div className="bg-card p-5 border-[rgba(224,138,122,0.15)] hover:border-[rgba(224,138,122,0.25)] hover:bg-[rgba(42,30,42,0.8)]">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wider">🐜 Gastos chicos que suman</h3>
@@ -251,7 +251,7 @@ export default function ComprasDashboard({ month }: { month: string }) {
         )}
 
         {/* Top expensive */}
-        {insights?.top_expensive?.length > 0 && (
+        {insights && insights.top_expensive.length > 0 && (
           <div className="bg-card p-5 hover:border-[rgba(232,184,75,0.2)] hover:bg-[rgba(42,30,42,0.8)]">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wider">Productos más caros</h3>
@@ -274,7 +274,7 @@ export default function ComprasDashboard({ month }: { month: string }) {
       </div>
 
       {/* Insights */}
-      {insights?.preocupaciones?.length > 0 && (
+      {insights && insights.preocupaciones.length > 0 && (
         <div className="bg-[rgba(143,202,160,0.06)] border border-[rgba(143,202,160,0.15)] rounded-[16px] p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wider">💡 Observaciones</h3>
@@ -286,7 +286,7 @@ export default function ComprasDashboard({ month }: { month: string }) {
       )}
 
       {/* Recurrencias */}
-      {insights?.recurrencias?.length > 0 && (
+      {insights && insights.recurrencias.length > 0 && (
         <div className="bg-card p-5 hover:border-[rgba(232,184,75,0.2)] hover:bg-[rgba(42,30,42,0.8)]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wider">🔄 Compras frecuentes</h3>

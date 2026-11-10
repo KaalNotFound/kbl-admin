@@ -226,7 +226,7 @@ export default function WhatsAppFeed() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedChat, setSelectedChat] = useState<string | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval>>()
+  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   useEffect(() => {
     function load() {

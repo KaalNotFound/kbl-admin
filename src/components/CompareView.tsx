@@ -7,7 +7,7 @@ export default function CompareView() {
   const [query, setQuery] = useState('')
   const [data, setData] = useState<CompareData | null>(null)
   const [loading, setLoading] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout>>()
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     if (!query.trim()) { setData(null); return }

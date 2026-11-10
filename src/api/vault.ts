@@ -75,7 +75,7 @@ export function createInventoryItem(data: {
   min_stock?: number
   expiry?: string
   notes?: string
-}): Promise<{ success: boolean; item: InventoryItem }> {
+}): Promise<{ success: boolean; item: InventoryItem; error?: string }> {
   return fetch(`/api/inventory/item`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

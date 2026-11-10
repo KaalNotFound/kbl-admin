@@ -80,7 +80,7 @@ export default function BraveTabs() {
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('')
   const [activating, setActivating] = useState<string | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval>>()
+  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   useEffect(() => {
     function load() {

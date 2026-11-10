@@ -9,7 +9,8 @@ import { MERGE_META } from '../algorithms/merge'
 
 describe('RTL harness (jsdom) — smoke', () => {
   it('renders a presentational panel without any server', () => {
-    render(<PseudoCodePanel pseudocode={MERGE_META.pseudocode} activeIndex={null} />)
+    // MERGE_META always defines its pseudo-code trace (see merge.js).
+    render(<PseudoCodePanel pseudocode={MERGE_META.pseudocode!} activeIndex={null} />)
     expect(screen.getByText('Punto de ejecución')).toBeDefined()
     expect(screen.getByText(/for width in 1, 2, 4/)).toBeDefined()
   })

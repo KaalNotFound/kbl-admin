@@ -161,7 +161,7 @@ export default function FoodSoraDashboard() {
       </div>
 
       {/* Timeline */}
-      {detail?.length > 0 && (
+      {detail && detail.length > 0 && (
         <div className="bg-card p-5 hover:border-[rgba(232,184,75,0.2)] hover:bg-[rgba(42,30,42,0.8)]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[0.8rem] font-semibold text-[#c8b8a8] uppercase tracking-wider">Detalle por día</h3>

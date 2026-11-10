@@ -112,7 +112,7 @@ function AdherenceCard() {
             </Pie>
             <Tooltip
               contentStyle={{ background: '#1a1d27', border: '1px solid #2a2d37', borderRadius: 8, fontSize: 12 }}
-              formatter={(value: number) => [`${value} min`, 'Tiempo']}
+              formatter={(value) => [`${value} min`, 'Tiempo']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
           </PieChart>
@@ -153,7 +153,7 @@ function WeeklyChart() {
             <YAxis tick={{ fontSize: 11, fill: '#888' }} label={{ value: 'min', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: '#666' } }} />
             <Tooltip
               contentStyle={{ background: '#1a1d27', border: '1px solid #2a2d37', borderRadius: 8, fontSize: 12 }}
-              formatter={(value: number) => [`${value} min`]}
+              formatter={(value) => [`${value} min`]}
             />
             <Bar dataKey="Estudio" stackId="a" fill={BLOCK_COLORS.estudio} radius={[0, 0, 0, 0]} />
             <Bar dataKey="Infra" stackId="a" fill={BLOCK_COLORS.infra} radius={[0, 0, 0, 0]} />

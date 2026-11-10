@@ -112,7 +112,7 @@ export default function FinanzasDashboard() {
           ]} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a0907e', fontSize: 11 }} />
             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a0907e', fontSize: 11 }} tickFormatter={(v: number) => `$${Math.abs(v)}`} />
-            <Tooltip contentStyle={{ background: '#1e1420', border: '1px solid rgba(232,184,75,0.15)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: '#c8b8a8' }} formatter={(v: number) => `$${Math.abs(v)}`} />
+            <Tooltip contentStyle={{ background: '#1e1420', border: '1px solid rgba(232,184,75,0.15)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: '#c8b8a8' }} formatter={(v) => `$${Math.abs(Number(v))}`} />
             <Bar dataKey="monto" radius={[4, 4, 0, 0]} maxBarSize={50} />
           </BarChart>
         </ResponsiveContainer>
@@ -204,7 +204,7 @@ export default function FinanzasDashboard() {
                       <Cell key={i} fill={['#8fcab0', '#e8b84b', '#5b9bd5', '#e08a7a', '#b8a0d8'][i % 5]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: '#1e1420', border: '1px solid rgba(232,184,75,0.15)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: '#c8b8a8' }} formatter={(v: number) => `$${v}`} />
+                  <Tooltip contentStyle={{ background: '#1e1420', border: '1px solid rgba(232,184,75,0.15)', borderRadius: '8px', fontSize: '12px' }} itemStyle={{ color: '#c8b8a8' }} formatter={(v) => `$${Number(v)}`} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
