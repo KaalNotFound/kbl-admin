@@ -27,8 +27,8 @@ import todosRouter from './todos.mjs';
 import globalSearchRouter from './global-search.mjs';
 import vaultDoctorRouter from './vault-doctor.mjs';
 
-// Note: finanzasRouter is in server/_finanzas.mjs (not in routes/)
-import finanzasRouter from '../_finanzas.mjs';
+// Note: finanzasRouter is in server/finanzas-router.mjs (not in routes/)
+import finanzasRouter from '../finanzas-router.mjs';
 
 export const apiRouters = [
   overviewRouter,

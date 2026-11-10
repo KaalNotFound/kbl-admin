@@ -9,10 +9,10 @@
 import { describe, it, expect } from 'vitest'
 import express from 'express'
 import request from 'supertest'
-import finanzasRouter from '../_finanzas.mjs'
+import finanzasRouter from '../finanzas-router.mjs'
 
 const INTERNAL =
-  "EACCES: permission denied, open '/home/kaal/workspace/kbl/server/data/_contract-secret.json'"
+  "EACCES: permission denied, open '/srv/kbl-private/server/data/_contract-secret.json'"
 
 function buildApp() {
   const app = express()

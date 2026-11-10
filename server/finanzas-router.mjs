@@ -1,4 +1,4 @@
-// _finanzas.mjs — Thin router delegating to FinanzasUseCases via DI (Torre finanzas, ADR-025)
+// finanzas-router.mjs — Thin router delegating to FinanzasUseCases via DI (Torre finanzas, ADR-025)
 // Router → req.useCases.finanzas — NO imports de lib/ de dominio (boundary §2.1):
 // el único helper de infra permitido es error-handler.mjs, igual que el resto
 // de los routers (logAndRespond: log server-side + mensaje genérico al cliente).

@@ -1,7 +1,7 @@
 /**
  * FinanzasUseCases — Use Case collection (Torre finanzas, ADR-025)
  *
- * Re-capetización del router _finanzas.mjs: el router deja de importar lib/
+ * Re-capetización del router finanzas-router.mjs: el router deja de importar lib/
  * (violación §2.1, excepción ca-boundary-debt ADR-025) y recibe la lógica por
  * factory (DI container). Este use-case es un orquestador delgado: recibe
  * `ensureDb` (puerto de datos, I/O) y `calc` (funciones de cálculo) como deps

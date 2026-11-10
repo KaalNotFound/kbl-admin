@@ -114,7 +114,7 @@ function createContainer(opts = {}) {
     // inbox. Legacy contentStore kept for callers without the port.
     captureNote: createCaptureNote({ contentStore, eventBus, vault: vaultFsApi }),
     submitActiveRecallReview: createSubmitActiveRecallReview({ masteryStore, eventBus }),
-    // Torre finanzas (ADR-025): el router _finanzas.mjs recibe la lógica por DI,
+    // Torre finanzas (ADR-025): el router finanzas-router.mjs recibe la lógica por DI,
     // no importa lib/ directo (boundary §2.1). ensureDb = puerto de datos (I/O),
     // calc = funciones de cálculo — ambas inyectadas desde el wiring.
     finanzas: createFinanzasUseCases({

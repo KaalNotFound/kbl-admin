@@ -38,7 +38,7 @@ function collectRouteKeys() {
 
 describe('API route registry lock (API9)', () => {
   it('mounts every router file plus the finanzas barrel (no orphans)', () => {
-    // +1: ../_finanzas.mjs lives outside server/routes/ and is mounted manually.
+    // +1: ../finanzas-router.mjs lives outside server/routes/ and is mounted manually.
     expect(apiRouters.length).toBe(routeFileCount + 1)
     expect(apiRouters.length).toBe(21)
   })
