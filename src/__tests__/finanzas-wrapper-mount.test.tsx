@@ -19,7 +19,7 @@ describe('FinanzasWrapper sub-tab routing', () => {
     expect(screen.getByTestId('sub-patrimonio')).toBeTruthy()
     expect(screen.queryByTestId('sub-finanzas')).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: /Food Sora/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Comedero/ }))
     expect(screen.getByTestId('sub-food')).toBeTruthy()
     expect(screen.queryByTestId('sub-patrimonio')).toBeNull()
   })

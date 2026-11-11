@@ -28,7 +28,7 @@ const KIND_LABELS: Record<string, string> = {
 
 const ZONE_LABELS: Record<string, string> = {
   compras: 'Compras',
-  food_sora: 'Daily / Food Sora',
+  food_sora: 'Daily / Comedero',
   assets: 'Patrimonio',
   wallet: 'Wallet Paú',
 }

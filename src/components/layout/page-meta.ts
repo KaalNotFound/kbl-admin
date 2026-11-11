@@ -7,7 +7,7 @@ const pageMeta: Record<Tab, { title: string; desc: string }> = {
   todos:        { title: 'TODO & Métricas',          desc: 'TODO SSOT (_PENDING.md) + métricas del vault en tiempo real + grafo' },
   context:      { title: 'Contexto de Sesión',       desc: 'Pendientes activos, roadmap y últimos checkpoints' },
   integrations: { title: 'Dashboards Conectados',    desc: 'Anki y otros sistemas integrados en KBL_Admin' },
-  finanzas:     { title: 'Finanzas Personales',      desc: 'Resumen financiero, patrimonio, compras y Food Sora' },
+  finanzas:     { title: 'Finanzas Personales',      desc: 'Resumen financiero, patrimonio, compras y Comedero' },
   study:        { title: 'Panel de Estudio',          desc: 'Notas, Anki y Pomodoro integrados en un solo panel' },
   algorithms:   { title: 'Algoritmos',                desc: 'Visualizadores paso a paso para estudiar algoritmos' },
   behavioral:   { title: 'Conducta & Hábitos',       desc: 'Bloques de tiempo, rachas de estudio y adherencia al Kernel' },

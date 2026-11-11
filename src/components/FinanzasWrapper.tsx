@@ -10,7 +10,7 @@ const tabs: { id: FinanzasTab; label: string; icon: string }[] = [
   { id: 'resumen',    label: 'Resumen',    icon: '📊' },
   { id: 'patrimonio', label: 'Patrimonio', icon: '🏦' },
   { id: 'compras',    label: 'Compras',    icon: '🛒' },
-  { id: 'food-sora',  label: 'Food Sora',  icon: '🐱' },
+  { id: 'food-sora',  label: 'Comedero',  icon: '🐱' },
 ]
 
 function getCurrentMonth() {

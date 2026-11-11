@@ -57,7 +57,7 @@ export default function FoodSoraDashboard() {
       <div className="relative bg-card p-7 border-[rgba(143,202,160,0.10)] hover:border-[rgba(143,202,160,0.2)]">
         <div className="absolute -top-2/5 -right-1/5 w-[300px] h-[300px] rounded-full bg-[radial-gradient(circle,rgba(143,202,160,0.10),transparent_70%)] pointer-events-none animate-glow-pulse" />
         <div className="flex items-center gap-[0.6rem] mb-2">
-          <span className="text-[0.65rem] uppercase tracking-wider font-semibold text-kbl-green bg-[rgba(143,202,160,0.12)] px-[0.6rem] py-[0.2rem] rounded-[4px]">🐱 Food Sora</span>
+          <span className="text-[0.65rem] uppercase tracking-wider font-semibold text-kbl-green bg-[rgba(143,202,160,0.12)] px-[0.6rem] py-[0.2rem] rounded-[4px]">🐱 Comedero</span>
           <span className="text-[0.75rem] text-[#a0907e]">la gorda</span>
         </div>
         <div className="text-[2.2rem] font-bold leading-tight mb-3 text-gradient-green">
