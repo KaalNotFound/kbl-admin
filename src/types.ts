@@ -300,38 +300,6 @@ export interface EntityCatalogEntry {
   description: string
 }
 
-// --- Brave Tabs ---
-export interface BraveTab {
-  id: string
-  title: string
-  url: string
-  favicon?: string
-  active: boolean
-  type: string
-  /** Timestamp when the page was last accessed (ISO string) */
-  last_accessed?: string
-}
-
-// --- WhatsApp ---
-export interface WhatsAppChat {
-  name: string
-  last_message: string
-  timestamp: string
-  unread: number
-  avatar_letter: string
-}
-
-export interface WhatsAppMessage {
-  text: string
-  outgoing: boolean
-  timestamp: string
-}
-
-export interface WhatsAppChatResponse {
-  messages: WhatsAppMessage[]
-  contact: string
-}
-
 // --- Session Context (Pendientes + Roadmap + Checkpoints) ---
 export interface PendienteItem {
   title: string

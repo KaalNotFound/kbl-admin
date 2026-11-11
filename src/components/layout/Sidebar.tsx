@@ -2,7 +2,7 @@ import { useAppStore } from '../../stores/app-store'
 
 type Tab =
   | 'overview' | 'integrations' | 'inventory' | 'queue' | 'projects'
-  | 'entities' | 'logs' | 'brave' | 'whatsapp' | 'context'
+  | 'entities' | 'logs' | 'context'
   | 'study' | 'market' | 'finanzas' | 'behavioral'
   | 'todos'
   | 'algorithms'
@@ -30,8 +30,6 @@ const tabs: TabDef[] = [
   { id: 'projects',     label: 'Proyectos',        icon: '⊞', group: 'Flujo' },
   { id: 'entities',     label: 'Entity Types',     icon: '⊡', group: 'Flujo' },
   { id: 'logs',         label: 'Registros',        icon: '☰', group: 'Sistema' },
-  { id: 'brave',        label: 'Navegador',        icon: '🌐', group: 'Referencia' },
-  { id: 'whatsapp',     label: 'Conversaciones',   icon: '💬', group: 'Referencia' },
   { id: 'doctor',       label: 'Vault Doctor',     icon: '🩺', group: 'Referencia' },
 ]
 

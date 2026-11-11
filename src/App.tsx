@@ -6,8 +6,6 @@ import ProjectsDashboard from './components/ProjectsDashboard'
 import EntityTypesDashboard from './components/EntityTypesDashboard'
 import SystemLogs from './components/SystemLogs'
 import QuickCapture from './components/QuickCapture'
-import BraveTabs from './components/BraveTabs'
-import WhatsAppFeed from './components/WhatsAppFeed'
 import SessionContext from './components/SessionContext'
 import StudyDashboard from './components/StudyDashboard'
 import AlgorithmsDashboard from './components/AlgorithmsDashboard'
@@ -43,8 +41,6 @@ export default function App() {
             {tab === 'projects' && <ProjectsDashboard />}
             {tab === 'entities' && <EntityTypesDashboard />}
             {tab === 'logs' && <SystemLogs />}
-            {tab === 'brave' && <BraveTabs />}
-            {tab === 'whatsapp' && <WhatsAppFeed />}
             {tab === 'context' && <SessionContext />}
             {tab === 'study' && <StudyDashboard />}
             {tab === 'algorithms' && <AlgorithmsDashboard />}

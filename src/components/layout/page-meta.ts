@@ -17,8 +17,6 @@ const pageMeta: Record<Tab, { title: string; desc: string }> = {
   projects:     { title: 'Proyectos Activos',          desc: 'Estado, bloqueos y actividad de proyectos' },
   entities:     { title: 'Entity Types',              desc: 'Distribución de tipos de entidad en el vault' },
   logs:         { title: 'Registros del Sistema',      desc: 'Sesiones, térmicas y logs de captura' },
-  brave:        { title: 'Pestañas del Navegador',    desc: 'Mapa visual de pestañas abiertas en Brave' },
-  whatsapp:     { title: 'Conversaciones WhatsApp',   desc: 'Feed de mensajes y notificaciones activas' },
   doctor:       { title: 'Vault Doctor',              desc: 'Auditoría del vault: lint de esquema por directorio + diagnóstico de las fuentes en runtime' },
 }
 

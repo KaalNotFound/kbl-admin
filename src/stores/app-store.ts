@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 type Tab =
   | 'overview' | 'integrations' | 'inventory' | 'queue' | 'projects'
-  | 'entities' | 'logs' | 'brave' | 'whatsapp' | 'context'
+  | 'entities' | 'logs' | 'context'
   | 'study' | 'market' | 'finanzas' | 'behavioral'
   | 'todos'
   | 'algorithms'
